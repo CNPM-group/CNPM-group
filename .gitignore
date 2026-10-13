@@ -1,0 +1,12 @@
+bin/
+obj/
+.vs/
+.idea/
+*.user
+*.suo
+.env
+node_modules/
+dist/
+build/
+.dart_tool/
+*.log
