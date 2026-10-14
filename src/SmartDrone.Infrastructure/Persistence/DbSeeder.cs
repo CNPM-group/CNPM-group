@@ -18,8 +18,8 @@ public static class DbSeeder
         var sp = scope.ServiceProvider;
         var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("DbSeeder");
         var db = sp.GetRequiredService<AppDbContext>();
-
-        if (!(await db.Database.GetMigrationsAsync()).Any())
+        
+if (!db.Database.GetMigrations().Any())
         {
             logger.LogWarning(
                 "Chưa có migration nào. Chạy: dotnet ef migrations add Initial -p src/SmartDrone.Infrastructure -s src/SmartDrone.Api -o Persistence/Migrations");
@@ -49,8 +49,8 @@ public static class DbSeeder
         }
 
         // 3) Demo users (chỉ bật qua config Seed:DemoUsers, mặc định chỉ Development)
-        if (config.GetValue<bool>("Seed:DemoUsers"))
-        {
+       if (bool.TryParse(config["Seed:DemoUsers"], out var seedDemoUsers)
+    && seedDemoUsers)
             var password = config["Seed:DemoPassword"];
             if (string.IsNullOrWhiteSpace(password))
             {
