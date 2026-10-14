@@ -1,5 +1,5 @@
 KAN-11: Nạp schema.sql lên Postgres (docker compose), rà lỗi, chốt chỉnh sửa
-Các công việc đã hoàn thành:
+Các công việc đã thực hiện:
 
 - Khởi chạy PostgreSQL 16 bằng Docker Compose.
 - Khởi tạo cơ sở dữ liệu drone với tài khoản drone.
