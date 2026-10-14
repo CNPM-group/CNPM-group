@@ -2,7 +2,43 @@ KAN-11: Nạp schema.sql lên Postgres (docker compose), rà lỗi, chốt chỉ
 Các công việc đã hoàn thành:
 
 - Khởi chạy PostgreSQL 16 bằng Docker Compose.
+- Khởi tạo cơ sở dữ liệu drone với tài khoản drone.
 - Thực thi thành công file docs/schema.sql vào cơ sở dữ liệu drone.
 - Xác nhận cơ sở dữ liệu có 16 bảng.
 - Kiểm tra dữ liệu mẫu gồm 5 trạm hạ cánh, 20 tuyến kết nối trạm và 3 drone.
-- Xác nhn tập lệnh SQL thực thi thành công và kết thúc bằng COMMIT.
+- Xác nhận tập lệnh SQL thực thi thành công và kết thúc bằng COMMIT.
+- Kiểm tra trạng thái container PostgreSQL; container đang chạy và health check đạt healthy.
+- Giữ nguyên dữ liệu cơ sở dữ liệu sau khi khởi tạo, không thực hiện xóa hoặc đặt lại database.
+
+File và môi trường liên quan:
+
+- File cấu hình Docker Compose: docker-compose.yml
+- File cấu hình biến môi trường mẫu: .env.example
+- File biến môi trường dùng ở máy local: .env
+- File khởi tạo cấu trúc cơ sở dữ liệu: docs/schema.sql
+- Hệ quản trị cơ sở dữ liệu: PostgreSQL 16
+- Tên database: drone
+
+Các lệnh kiểm tra đã sử dụng:
+
+- Chạy tại thư mục gốc của dự án:
+docker compose ps
+- Kiểm tra trạng thái container PostgreSQL.
+docker compose exec -T db psql -U drone -d drone -c "\dt"
+- Liệt kê các bảng trong database.
+docker compose exec -T db psql -U drone -d drone -c "SELECT COUNT(*) AS table_count FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE';"
+- Đếm tổng số bảng trong schema public.
+docker compose exec -T db psql -U drone -d drone -c "SELECT 'landing_stations' AS table_name, COUNT(*) AS total FROM landing_stations UNION ALL SELECT 'station_routes', COUNT(*) FROM station_routes UNION ALL SELECT 'drones', COUNT(*) FROM drones;"
+
+Kết quả kiểm tra:
+
+PostgreSQL 16: Đang chạy, trạng thái healthy
+Thực thi docs/schema.sql: Thành công
+Tổng số bảng: 16
+Trạm hạ cánh: 5
+Tuyến kết nối trạm: 20
+Drone: 20
+
+Vấn đề còn lại:
+
+- MinIO chưa khởi chạy được do Docker không tải được image minio/minio theo cấu hình hiện tại.
