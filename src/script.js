@@ -3,11 +3,21 @@ const orders = [];
 let nextOrderId = 1;
 
 const statuses = [
-  "Yêu cầu đã tạo",
-  "Đã phê duyệt",
-  "Đang vận chuyển",
-  "Đã giao hàng"
+  "Pending",
+  "Approved",
+  "InTransit",
+  "Delivered"
 ];
+
+function statusLabel(status) {
+  const labels = {
+    Pending: "Chờ duyệt",
+    Approved: "Đã phê duyệt",
+    InTransit: "Đang vận chuyển",
+    Delivered: "Đã giao hàng"
+  };
+  return labels[status] || status;
+}
 
 function showPage(pageId) {
   document.querySelectorAll(".page").forEach(page => {
@@ -17,15 +27,20 @@ function showPage(pageId) {
   document.getElementById(pageId).classList.remove("hidden");
 
   if (pageId === "orders") renderOrders();
-  if (pageId === "status") updateSelect("statusOrder");
-  if (pageId === "confirm") updateSelect("confirmOrder");
+  if (pageId === "status") {
+    updateSelect("statusOrder");
+    showStatus();
+  }
+  if (pageId === "confirm") {
+    updateSelect("confirmOrder");
+    showConfirmInfo();
+  }
 }
 
 function login(event) {
   event.preventDefault();
 
   const email = document.getElementById("email").value;
-
   document.getElementById("loginMessage").textContent =
     "Đăng nhập demo thành công với tài khoản: " + email;
 
@@ -82,7 +97,9 @@ function renderOrders() {
     route.textContent = order.pickup + " → " + order.delivery;
 
     const status = document.createElement("p");
-    status.textContent = "Trạng thái: " + order.status;
+    status.textContent =
+      "Trạng thái: " + statusLabel(order.status) +
+      " (" + order.status + ")";
 
     card.append(title, recipient, route, status);
     container.appendChild(card);
@@ -106,7 +123,8 @@ function updateSelect(selectId) {
   orders.forEach(order => {
     const option = document.createElement("option");
     option.value = order.id;
-    option.textContent = "SD" + order.id + " - " + order.recipient;
+    option.textContent =
+      "SD" + order.id + " - " + order.recipient;
     select.appendChild(option);
   });
 
@@ -120,7 +138,8 @@ function showStatus() {
   const order = orders.find(item => item.id === id);
 
   document.getElementById("statusInfo").textContent = order
-    ? "Đơn SD" + order.id + ": " + order.status
+    ? "Đơn SD" + order.id + ": " +
+      statusLabel(order.status) + " (" + order.status + ")"
     : "Chưa có đơn hàng.";
 }
 
@@ -142,12 +161,28 @@ function advanceStatus() {
 
   showStatus();
   renderOrders();
+  showConfirmInfo();
+}
+
+function showConfirmInfo() {
+  const select = document.getElementById("confirmOrder");
+  const info = document.getElementById("confirmInfo");
+  const id = Number(select.value);
+  const order = orders.find(item => item.id === id);
+
+  if (!order) {
+    info.textContent = "Vui lòng tạo đơn hàng trước.";
+  } else if (order.status === "Delivered") {
+    info.textContent = "Đơn hàng đã giao. Có thể xác nhận nhận hàng.";
+  } else {
+    info.textContent =
+      "Trạng thái hiện tại: " + statusLabel(order.status);
+  }
 }
 
 function confirmDelivery() {
   const id = Number(document.getElementById("confirmOrder").value);
   const order = orders.find(item => item.id === id);
-
   const info = document.getElementById("confirmInfo");
 
   if (!order) {
@@ -155,7 +190,7 @@ function confirmDelivery() {
     return;
   }
 
-  if (order.status !== "Đã giao hàng") {
+  if (order.status !== "Delivered") {
     info.textContent =
       "Đơn hàng chưa giao xong. Vui lòng cập nhật trạng thái trước.";
     return;
@@ -165,4 +200,11 @@ function confirmDelivery() {
     "Đã xác nhận nhận hàng thành công cho đơn SD" + order.id + ".";
 }
 
+document.getElementById("statusOrder")
+  .addEventListener("change", showStatus);
+
+document.getElementById("confirmOrder")
+  .addEventListener("change", showConfirmInfo);
+
 showPage("login");
+
