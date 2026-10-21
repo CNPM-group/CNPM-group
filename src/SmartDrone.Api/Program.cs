@@ -47,6 +47,7 @@ builder.Services
 builder.Services.AddAuthorization();
 
 // ---- Web ----
+builder.Services.AddHttpClient();
 builder.Services.AddControllers()
     .AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddProblemDetails();
