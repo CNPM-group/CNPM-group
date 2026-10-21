@@ -1,0 +1,731 @@
+openapi: 3.0.3
+info:
+  title: SmartDroneDelivery API
+  version: 1.0.0-draft
+  description: |
+    Contract v1 (bản nháp để chốt KAN-7). Web (React) và Mobile (Flutter) làm theo file này,
+    dùng data giả cho tới khi backend nối thật.
+
+    **Quy ước chung**
+    - Base path: `/api/v1`. Dev: `http://localhost:5080`. Emulator Android gọi `http://10.0.2.2:5080`.
+    - Xác thực: JWT Bearer, lấy từ `POST /auth/login`, gửi kèm header `Authorization: Bearer <token>`.
+    - JSON dùng **camelCase**. Enum là **chuỗi** (ví dụ `"Pending"`). Thời gian là **UTC ISO-8601** (đuôi `Z`).
+    - Id là UUID. Lỗi trả về theo chuẩn ProblemDetails (RFC 7807).
+    - Danh sách có phân trang: `page` (từ 1), `pageSize` (mặc định 20, tối đa 100).
+    - Đi sai luật chuyển trạng thái đơn thì trả `409 Conflict`.
+
+    **Chưa có trong v1 (làm ở W3 trở đi):** lên lịch giao, xác nhận OTP/QR, profile, drone, analytics, AI, SignalR.
+servers:
+  - url: http://localhost:5080/api/v1
+    description: Local dev
+tags:
+  - name: Auth
+  - name: Stations
+  - name: Orders
+  - name: Packages
+  - name: Drones
+
+security:
+  - bearerAuth: []
+
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Đăng ký tài khoản Customer
+      description: Tự đăng ký luôn là role `Customer`. Role khác do Admin cấp.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegisterRequest' }
+            example:
+              email: khach@example.com
+              password: Matkhau@123
+              fullName: Nguyễn Văn A
+      responses:
+        '200':
+          description: Đăng ký thành công, trả luôn token
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Đăng nhập
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+            example:
+              email: admin@drone.local
+              password: Demo@12345
+      responses:
+        '200':
+          description: Đăng nhập thành công
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Xem mình là ai và có role gì
+      responses:
+        '200':
+          description: Thông tin từ token
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserInfo' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /stations:
+    get:
+      tags: [Stations]
+      summary: Danh sách trạm đáp
+      description: Mọi role đã đăng nhập đều xem được.
+      responses:
+        '200':
+          description: Danh sách trạm, sắp theo tên
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Station' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [Stations]
+      summary: Tạo trạm (Admin, Manager)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/StationRequest' }
+            example:
+              name: Trạm KTX Khu B
+              latitude: 10.8835
+              longitude: 106.8072
+              status: Available
+      responses:
+        '201':
+          description: Đã tạo
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Station' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /stations/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Stations]
+      summary: Chi tiết một trạm
+      responses:
+        '200':
+          description: Chi tiết trạm
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Station' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Stations]
+      summary: Sửa trạm (Admin, Manager)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/StationRequest' }
+      responses:
+        '200':
+          description: Đã sửa
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Station' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Stations]
+      summary: Xóa trạm (Admin, Manager)
+      responses:
+        '204': { description: Đã xóa }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /drones:
+    get:
+      tags: [Drones]
+      summary: Danh sách drone (Dispatcher, StationOperator, Manager, Admin)
+      responses:
+        '200':
+          description: Danh sách drone, sắp theo mã
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Drone' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [Drones]
+      summary: Tạo drone (Admin, Manager)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DroneRequest' }
+            example:
+              droneCode: DRN-004
+              model: SD-Quad X1
+              maxPayloadKg: 5
+              maxRangeKm: 15
+              cruiseSpeedKmh: 40
+              batteryPct: 100
+              status: Idle
+      responses:
+        '201':
+          description: Đã tạo
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Drone' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /drones/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Drones]
+      summary: Chi tiết drone
+      responses:
+        '200':
+          description: Chi tiết drone
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Drone' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Drones]
+      summary: Sửa drone (Admin, Manager)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DroneRequest' }
+      responses:
+        '200':
+          description: Đã sửa
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Drone' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+    delete:
+      tags: [Drones]
+      summary: Xóa drone (Admin, Manager)
+      responses:
+        '204': { description: Đã xóa }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /packages/images:
+    post:
+      tags: [Packages]
+      summary: Upload ảnh kiện hàng (Customer)
+      description: Upload trước, lấy `imageKey` rồi gửi kèm khi tạo đơn. Ảnh lưu ở MinIO, DB chỉ giữ key.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Upload thành công
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ImageUploadResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /orders:
+    get:
+      tags: [Orders]
+      summary: Danh sách đơn hàng
+      description: |
+        - Customer chỉ thấy đơn của chính mình.
+        - Dispatcher, Manager, Admin thấy tất cả.
+        - Đơn mới nhất xếp trước.
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema: { $ref: '#/components/schemas/OrderStatus' }
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Một trang đơn hàng
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OrderPage' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [Orders]
+      summary: Tạo đơn (Customer)
+      description: Đơn mới luôn có trạng thái `Pending`. Server kiểm tra tải trọng và kích thước kiện.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateOrderRequest' }
+            example:
+              originStationId: 3f1b8f0e-6a45-4d0e-9d64-0d2f7a1c2b11
+              destinationStationId: 9a7c1d52-12de-4a50-8a0c-5e7b3d9f4c22
+              deliveryAddressId: null
+              notes: Gọi trước khi tới
+              package:
+                description: Sách giáo trình
+                weightKg: 1.5
+                lengthCm: 30
+                widthCm: 20
+                heightCm: 10
+                imageKey: null
+      responses:
+        '201':
+          description: Đã tạo đơn
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Order' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /orders/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Orders]
+      summary: Chi tiết đơn
+      description: Customer chỉ xem được đơn của mình, đơn người khác trả 404.
+      responses:
+        '200':
+          description: Chi tiết đơn
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Order' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /orders/{id}/history:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Orders]
+      summary: Lịch sử đổi trạng thái (dùng vẽ timeline)
+      responses:
+        '200':
+          description: Các lần đổi trạng thái, cũ nhất xếp trước
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/StatusHistoryItem' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /orders/{id}/cancel:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [Orders]
+      summary: Hủy đơn (Customer, chỉ khi đơn còn Pending)
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CancelRequest' }
+      responses:
+        '200':
+          description: Đơn đã chuyển sang Cancelled
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Order' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /orders/{id}/approve:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [Orders]
+      summary: Duyệt đơn (Dispatcher, Manager, Admin)
+      description: Chỉ duyệt được đơn `Pending`, chuyển sang `Approved`.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NoteRequest' }
+      responses:
+        '200':
+          description: Đơn đã chuyển sang Approved
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Order' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /orders/{id}/reject:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [Orders]
+      summary: Từ chối đơn (Dispatcher, Manager, Admin)
+      description: Chỉ từ chối được đơn `Pending`, chuyển sang `Rejected`. Bắt buộc có lý do.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RejectRequest' }
+            example:
+              reason: Kiện vượt quá tải trọng của drone
+      responses:
+        '200':
+          description: Đơn đã chuyển sang Rejected
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Order' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    Page:
+      name: page
+      in: query
+      required: false
+      schema: { type: integer, minimum: 1, default: 1 }
+    PageSize:
+      name: pageSize
+      in: query
+      required: false
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+
+  responses:
+    BadRequest:
+      description: Dữ liệu gửi lên không hợp lệ
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+    Unauthorized:
+      description: Chưa đăng nhập hoặc token hết hạn
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+    Forbidden:
+      description: Đã đăng nhập nhưng role không đủ quyền
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+    NotFound:
+      description: Không tìm thấy
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+    Conflict:
+      description: Trạng thái hiện tại của đơn không cho phép thao tác này
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+
+  schemas:
+    UserRole:
+      type: string
+      enum: [Customer, Dispatcher, StationOperator, Manager, Admin]
+
+    StationStatus:
+      type: string
+      enum: [Available, Occupied, Maintenance]
+
+    OrderStatus:
+      type: string
+      description: |
+        Luồng chính: Pending -> Approved -> Scheduled -> InTransit -> ArrivedAtStation -> Completed.
+        Nhánh phụ: Pending -> Rejected, Pending -> Cancelled, (InTransit | ArrivedAtStation) -> Failed.
+      enum: [Pending, Approved, Rejected, Scheduled, InTransit, ArrivedAtStation, Completed, Failed, Cancelled]
+
+    RegisterRequest:
+      type: object
+      required: [email, password, fullName]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 8 }
+        fullName: { type: string, maxLength: 200 }
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string }
+
+    AuthResponse:
+      type: object
+      required: [token, expiresAtUtc, userId, email, fullName, roles]
+      properties:
+        token: { type: string }
+        expiresAtUtc: { type: string, format: date-time }
+        userId: { type: string, format: uuid }
+        email: { type: string, format: email }
+        fullName: { type: string }
+        roles:
+          type: array
+          items: { $ref: '#/components/schemas/UserRole' }
+
+    UserInfo:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        name: { type: string }
+        roles:
+          type: array
+          items: { $ref: '#/components/schemas/UserRole' }
+
+    Station:
+      type: object
+      required: [id, name, latitude, longitude, status, createdAtUtc]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        latitude: { type: number, minimum: -90, maximum: 90 }
+        longitude: { type: number, minimum: -180, maximum: 180 }
+        status: { $ref: '#/components/schemas/StationStatus' }
+        createdAtUtc: { type: string, format: date-time }
+
+    StationRequest:
+      type: object
+      required: [name, latitude, longitude]
+      properties:
+        name: { type: string, maxLength: 200 }
+        latitude: { type: number, minimum: -90, maximum: 90 }
+        longitude: { type: number, minimum: -180, maximum: 180 }
+        status: { $ref: '#/components/schemas/StationStatus' }
+
+    StationRef:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+
+    ImageUploadResponse:
+      type: object
+      required: [imageKey]
+      properties:
+        imageKey:
+          type: string
+          description: Object key trong MinIO, gửi lại trong `package.imageKey` khi tạo đơn.
+
+    PackageInput:
+      type: object
+      required: [weightKg, lengthCm, widthCm, heightCm]
+      properties:
+        description: { type: string, maxLength: 255, nullable: true }
+        weightKg:
+          type: number
+          minimum: 0
+          exclusiveMinimum: true
+          maximum: 50
+        lengthCm: { type: number, minimum: 0, exclusiveMinimum: true }
+        widthCm: { type: number, minimum: 0, exclusiveMinimum: true }
+        heightCm: { type: number, minimum: 0, exclusiveMinimum: true }
+        imageKey: { type: string, nullable: true }
+
+    PackageDto:
+      type: object
+      required: [id, weightKg, lengthCm, widthCm, heightCm]
+      properties:
+        id: { type: string, format: uuid }
+        description: { type: string, nullable: true }
+        weightKg: { type: number }
+        lengthCm: { type: number }
+        widthCm: { type: number }
+        heightCm: { type: number }
+        imageKey: { type: string, nullable: true }
+
+    CreateOrderRequest:
+      type: object
+      required: [originStationId, destinationStationId, package]
+      properties:
+        originStationId: { type: string, format: uuid }
+        destinationStationId:
+          type: string
+          format: uuid
+          description: Phải khác trạm đi.
+        deliveryAddressId: { type: string, format: uuid, nullable: true }
+        notes: { type: string, nullable: true }
+        package: { $ref: '#/components/schemas/PackageInput' }
+
+    Order:
+      type: object
+      required: [id, trackingCode, status, customerId, originStation, destinationStation, package, createdAtUtc]
+      properties:
+        id: { type: string, format: uuid }
+        trackingCode:
+          type: string
+          description: Mã tra cứu ngắn cho khách, ví dụ `DR1A2B3C4D`.
+        status: { $ref: '#/components/schemas/OrderStatus' }
+        customerId: { type: string, format: uuid }
+        originStation: { $ref: '#/components/schemas/StationRef' }
+        destinationStation: { $ref: '#/components/schemas/StationRef' }
+        package: { $ref: '#/components/schemas/PackageDto' }
+        eta: { type: string, format: date-time, nullable: true }
+        scheduledAtUtc: { type: string, format: date-time, nullable: true }
+        approvedAtUtc: { type: string, format: date-time, nullable: true }
+        completedAtUtc: { type: string, format: date-time, nullable: true }
+        failureReason: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+        createdAtUtc: { type: string, format: date-time }
+        updatedAtUtc: { type: string, format: date-time }
+
+    OrderSummary:
+      type: object
+      required: [id, trackingCode, status, originStationName, destinationStationName, createdAtUtc]
+      properties:
+        id: { type: string, format: uuid }
+        trackingCode: { type: string }
+        status: { $ref: '#/components/schemas/OrderStatus' }
+        originStationName: { type: string }
+        destinationStationName: { type: string }
+        eta: { type: string, format: date-time, nullable: true }
+        createdAtUtc: { type: string, format: date-time }
+
+    OrderPage:
+      type: object
+      required: [items, page, pageSize, totalItems]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/OrderSummary' }
+        page: { type: integer }
+        pageSize: { type: integer }
+        totalItems: { type: integer }
+
+    StatusHistoryItem:
+      type: object
+      required: [toStatus, changedAtUtc]
+      properties:
+        fromStatus:
+          allOf:
+            - $ref: '#/components/schemas/OrderStatus'
+          nullable: true
+        toStatus: { $ref: '#/components/schemas/OrderStatus' }
+        changedByName: { type: string, nullable: true }
+        note: { type: string, nullable: true }
+        changedAtUtc: { type: string, format: date-time }
+
+    NoteRequest:
+      type: object
+      properties:
+        note: { type: string, nullable: true }
+
+    CancelRequest:
+      type: object
+      properties:
+        reason: { type: string, nullable: true }
+
+    RejectRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason: { type: string, minLength: 1 }
+
+    ProblemDetails:
+      type: object
+      properties:
+        type: { type: string, nullable: true }
+        title: { type: string, nullable: true }
+        status: { type: integer, nullable: true }
+        detail: { type: string, nullable: true }
+        instance: { type: string, nullable: true }
+        errors:
+          type: object
+          nullable: true
+          description: Chỉ có khi lỗi validate, key là tên trường.
+          additionalProperties:
+            type: array
+            items: { type: string }
+
+    DroneStatus:
+      type: string
+      enum: [Idle, Assigned, InFlight, Charging, Maintenance]
+
+    Drone:
+      type: object
+      required: [id, droneCode, model, maxPayloadKg, maxRangeKm, cruiseSpeedKmh, batteryPct, status, createdAtUtc]
+      properties:
+        id: { type: string, format: uuid }
+        droneCode: { type: string }
+        model: { type: string }
+        maxPayloadKg: { type: number }
+        maxRangeKm: { type: number }
+        cruiseSpeedKmh: { type: number }
+        batteryPct: { type: integer, minimum: 0, maximum: 100 }
+        status: { $ref: '#/components/schemas/DroneStatus' }
+        currentStationId: { type: string, format: uuid, nullable: true }
+        createdAtUtc: { type: string, format: date-time }
+
+    DroneRequest:
+      type: object
+      required: [droneCode, model, maxPayloadKg, maxRangeKm, cruiseSpeedKmh]
+      properties:
+        droneCode: { type: string, maxLength: 30 }
+        model: { type: string, maxLength: 100 }
+        maxPayloadKg: { type: number, minimum: 0.1, maximum: 50 }
+        maxRangeKm: { type: number, minimum: 0.1, maximum: 500 }
+        cruiseSpeedKmh: { type: number, minimum: 1, maximum: 200 }
+        batteryPct: { type: integer, minimum: 0, maximum: 100, default: 100 }
+        status: { $ref: '#/components/schemas/DroneStatus' }
+        currentStationId: { type: string, format: uuid, nullable: true }
