@@ -1,0 +1,183 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tạo đơn giao hàng - SmartDroneDelivery</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 30px 16px;
+      font-family: Arial, sans-serif;
+      background: #f3f6fa;
+      color: #243247;
+    }
+    .container {
+      max-width: 760px;
+      margin: auto;
+      background: white;
+      padding: 28px;
+      border-radius: 14px;
+      box-shadow: 0 4px 18px #0000000d;
+    }
+    h1 { margin-top: 0; color: #1769aa; }
+    p { color: #68778b; }
+    label {
+      display: block;
+      margin: 16px 0 7px;
+      font-weight: bold;
+    }
+    select, input {
+      width: 100%;
+      padding: 11px;
+      border: 1px solid #cbd5e1;
+      border-radius: 7px;
+      font-size: 15px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    button {
+      margin-top: 22px;
+      padding: 12px 20px;
+      background: #1769aa;
+      color: white;
+      border: 0;
+      border-radius: 7px;
+      cursor: pointer;
+      font-size: 15px;
+    }
+    button:hover { background: #10558c; }
+    .message { margin-top: 16px; font-weight: bold; }
+    .success { color: #16803c; }
+    .error { color: #c62828; }
+    .nav { margin-top: 20px; }
+    .nav a { color: #1769aa; }
+    @media (max-width: 560px) {
+      .grid { grid-template-columns: 1fr; gap: 0; }
+      .container { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <h1>Tạo đơn giao hàng</h1>
+    <p>Nền tảng quản lý giao hàng bằng drone tích hợp AI</p>
+
+    <form id="orderForm">
+      <label for="from">Trạm gửi</label>
+      <select id="from" required>
+        <option value="">-- Chọn trạm gửi --</option>
+        <option value="ST01">ST01 - Trạm trung tâm</option>
+        <option value="ST02">ST02 - Trạm khu Đông</option>
+        <option value="ST03">ST03 - Trạm khu Tây</option>
+        <option value="ST04">ST04 - Trạm khu Nam</option>
+      </select>
+
+      <label for="to">Trạm nhận</label>
+      <select id="to" required>
+        <option value="">-- Chọn trạm nhận --</option>
+        <option value="ST01">ST01 - Trạm trung tâm</option>
+        <option value="ST02">ST02 - Trạm khu Đông</option>
+        <option value="ST03">ST03 - Trạm khu Tây</option>
+        <option value="ST04">ST04 - Trạm khu Nam</option>
+      </select>
+
+      <div class="grid">
+        <div>
+          <label for="weight">Cân nặng (kg)</label>
+          <input id="weight" type="number" min="0.01" max="20"
+                 step="0.01" placeholder="Ví dụ: 2.5" required>
+        </div>
+        <div>
+          <label for="length">Chiều dài (cm)</label>
+          <input id="length" type="number" min="0.1" max="100"
+                 step="0.1" placeholder="Ví dụ: 30" required>
+        </div>
+        <div>
+          <label for="width">Chiều rộng (cm)</label>
+          <input id="width" type="number" min="0.1" max="100"
+                 step="0.1" placeholder="Ví dụ: 20" required>
+        </div>
+        <div>
+          <label for="height">Chiều cao (cm)</label>
+          <input id="height" type="number" min="0.1" max="100"
+                 step="0.1" placeholder="Ví dụ: 15" required>
+        </div>
+      </div>
+
+      <button type="submit">Tạo đơn hàng</button>
+      <div id="message" class="message" role="status"></div>
+    </form>
+
+    <div class="nav">
+      <a href="order-list.html">Xem danh sách đơn hàng</a>
+    </div>
+  </main>
+
+  <script>
+    const STORAGE_KEY = "smartDroneDeliveryOrders";
+    const form = document.getElementById("orderForm");
+    const message = document.getElementById("message");
+
+    form.addEventListener("submit", function(event) {
+      event.preventDefault();
+
+      const from = document.getElementById("from").value;
+      const to = document.getElementById("to").value;
+      const weight = Number(document.getElementById("weight").value);
+      const length = Number(document.getElementById("length").value);
+      const width = Number(document.getElementById("width").value);
+      const height = Number(document.getElementById("height").value);
+
+      if (from === to) {
+        message.className = "message error";
+        message.textContent = "Trạm gửi và trạm nhận phải khác nhau.";
+        return;
+      }
+
+      if (
+        !Number.isFinite(weight) || weight < 0.01 || weight > 20 ||
+        !Number.isFinite(length) || length < 0.1 || length > 100 ||
+        !Number.isFinite(width) || width < 0.1 || width > 100 ||
+        !Number.isFinite(height) || height < 0.1 || height > 100
+      ) {
+        message.className = "message error";
+        message.textContent = "Vui lòng kiểm tra cân nặng và kích thước kiện hàng.";
+        return;
+      }
+
+      let orders;
+      try {
+        orders = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+        if (!Array.isArray(orders)) orders = [];
+      } catch {
+        orders = [];
+      }
+
+      const order = {
+        id: "SDD" + Date.now(),
+        from,
+        to,
+        weight,
+        length,
+        width,
+        height,
+        status: "Chờ xử lý",
+        createdAt: new Date().toLocaleString("vi-VN")
+      };
+
+      orders.unshift(order);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
+
+      message.className = "message success";
+      message.textContent = "Tạo đơn thành công! Mã đơn: " + order.id;
+      form.reset();
+    });
+  </script>
+</body>
+</html>

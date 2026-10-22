@@ -1,0 +1,255 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Danh sách đơn hàng - SmartDroneDelivery</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 28px 16px;
+      font-family: Arial, sans-serif;
+      background: #f3f6fa;
+      color: #243247;
+    }
+    .container {
+      max-width: 1100px;
+      margin: auto;
+      background: white;
+      padding: 24px;
+      border-radius: 14px;
+      box-shadow: 0 4px 18px #0000000d;
+    }
+    h1 { color: #1769aa; margin-top: 0; }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 20px 0;
+    }
+    input, select, button {
+      padding: 11px;
+      border: 1px solid #cbd5e1;
+      border-radius: 7px;
+      font-size: 14px;
+    }
+    input { flex: 1; min-width: 180px; }
+    button {
+      background: #1769aa;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover { background: #10558c; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin: 20px 0;
+    }
+    .stat {
+      background: #eef5fc;
+      border-radius: 9px;
+      padding: 16px;
+    }
+    .stat strong {
+      display: block;
+      font-size: 24px;
+      margin-top: 6px;
+    }
+    .table-wrap { overflow-x: auto; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 650px;
+    }
+    th, td {
+      text-align: left;
+      padding: 13px 10px;
+      border-bottom: 1px solid #e5eaf0;
+    }
+    th { background: #f7f9fc; }
+    .status {
+      display: inline-block;
+      background: #fff2cc;
+      color: #805b00;
+      border-radius: 20px;
+      padding: 5px 9px;
+      font-size: 12px;
+    }
+    .empty { padding: 24px; text-align: center; color: #68778b; }
+    .nav { margin-top: 20px; }
+    .nav a { color: #1769aa; }
+    dialog {
+      border: none;
+      border-radius: 12px;
+      max-width: 440px;
+      width: calc(100% - 32px);
+      padding: 24px;
+    }
+    dialog::backdrop { background: #0006; }
+    @media (max-width: 600px) {
+      .stats { grid-template-columns: 1fr; }
+      .container { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <h1>Danh sách đơn hàng</h1>
+    <p>Quản lý và theo dõi các đơn giao hàng bằng drone.</p>
+
+    <div class="stats">
+      <div class="stat">Tổng số đơn<strong id="total">0</strong></div>
+      <div class="stat">Chờ xử lý<strong id="pending">0</strong></div>
+      <div class="stat">Đang giao<strong id="shipping">0</strong></div>
+    </div>
+
+    <div class="toolbar">
+      <input id="search" type="search" placeholder="Tìm theo mã đơn...">
+      <select id="filter">
+        <option value="">Tất cả trạng thái</option>
+        <option value="Chờ xử lý">Chờ xử lý</option>
+        <option value="Đang giao">Đang giao</option>
+        <option value="Đã giao">Đã giao</option>
+      </select>
+      <button id="refresh" type="button">Tải lại</button>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Mã đơn</th>
+            <th>Trạm gửi</th>
+            <th>Trạm nhận</th>
+            <th>Cân nặng</th>
+            <th>Trạng thái</th>
+            <th>Chi tiết</th>
+          </tr>
+        </thead>
+        <tbody id="orderRows"></tbody>
+      </table>
+    </div>
+
+    <div id="empty" class="empty" hidden>Chưa có đơn hàng phù hợp.</div>
+
+    <div class="nav">
+      <a href="create-order.html">+ Tạo đơn hàng mới</a>
+    </div>
+  </main>
+
+  <dialog id="detailDialog">
+    <h2>Chi tiết đơn hàng</h2>
+    <div id="detailContent"></div>
+    <button id="closeDialog" type="button">Đóng</button>
+  </dialog>
+
+  <script>
+    const STORAGE_KEY = "smartDroneDeliveryOrders";
+    const search = document.getElementById("search");
+    const filter = document.getElementById("filter");
+    const rows = document.getElementById("orderRows");
+    const empty = document.getElementById("empty");
+
+    function getOrders() {
+      try {
+        const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+        return Array.isArray(data) ? data : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function renderOrders() {
+      const orders = getOrders();
+      const keyword = search.value.trim().toLowerCase();
+      const status = filter.value;
+
+      document.getElementById("total").textContent = orders.length;
+      document.getElementById("pending").textContent =
+        orders.filter(o => o.status === "Chờ xử lý").length;
+      document.getElementById("shipping").textContent =
+        orders.filter(o => o.status === "Đang giao").length;
+
+      const filtered = orders.filter(o =>
+        String(o.id || "").toLowerCase().includes(keyword) &&
+        (!status || o.status === status)
+      );
+
+      rows.replaceChildren();
+
+      filtered.forEach(order => {
+        const tr = document.createElement("tr");
+        const values = [
+          order.id || "",
+          order.from || "",
+          order.to || "",
+          (order.weight ?? "") + " kg"
+        ];
+
+        values.forEach(value => {
+          const td = document.createElement("td");
+          td.textContent = value;
+          tr.appendChild(td);
+        });
+
+        const statusCell = document.createElement("td");
+        const badge = document.createElement("span");
+        badge.className = "status";
+        badge.textContent = order.status || "Chờ xử lý";
+        statusCell.appendChild(badge);
+        tr.appendChild(statusCell);
+
+        const actionCell = document.createElement("td");
+        const detailButton = document.createElement("button");
+        detailButton.textContent = "Xem";
+        detailButton.type = "button";
+        detailButton.addEventListener("click", () => showDetails(order));
+        actionCell.appendChild(detailButton);
+        tr.appendChild(actionCell);
+
+        rows.appendChild(tr);
+      });
+
+      empty.hidden = filtered.length > 0;
+    }
+
+    function showDetails(order) {
+      const content = document.getElementById("detailContent");
+      content.replaceChildren();
+
+      const details = [
+        ["Mã đơn", order.id],
+        ["Trạm gửi", order.from],
+        ["Trạm nhận", order.to],
+        ["Cân nặng", order.weight + " kg"],
+        ["Kích thước", `${order.length} × ${order.width} × ${order.height} cm`],
+        ["Trạng thái", order.status],
+        ["Ngày tạo", order.createdAt || "Chưa có"]
+      ];
+
+      details.forEach(([label, value]) => {
+        const p = document.createElement("p");
+        const strong = document.createElement("strong");
+        strong.textContent = label + ": ";
+        p.append(strong, document.createTextNode(value ?? ""));
+        content.appendChild(p);
+      });
+
+      document.getElementById("detailDialog").showModal();
+    }
+
+    search.addEventListener("input", renderOrders);
+    filter.addEventListener("change", renderOrders);
+    document.getElementById("refresh").addEventListener("click", renderOrders);
+    document.getElementById("closeDialog").addEventListener("click", () => {
+      document.getElementById("detailDialog").close();
+    });
+
+    renderOrders();
+  </script>
+</body>
+</html>
