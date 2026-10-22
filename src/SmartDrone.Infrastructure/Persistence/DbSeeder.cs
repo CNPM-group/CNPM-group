@@ -45,6 +45,99 @@ public static class DbSeeder
             await db.SaveChangesAsync();
         }
 
+        // Seed 20 tuyến bay có hướng giữa 5 trạm
+        var stations = await db.Stations
+            .OrderBy(s => s.Name)
+            .ToListAsync();
+
+        if (stations.Count == 5)
+        {
+            // Lấy các tuyến đã tồn tại để tránh tạo trùng
+            var existingRoutes = await db.StationRoutes
+                .Select(r => new { r.FromStationId, r.ToStationId })
+                .ToListAsync();
+
+            var existingPairs = existingRoutes
+                .Select(r => (r.FromStationId, r.ToStationId))
+                .ToHashSet();
+
+            for (int i = 0; i < stations.Count; i++)
+            {
+                for (int j = 0; j < stations.Count; j++)
+                {
+                    // Không tạo tuyến từ một trạm đến chính nó
+                    if (i == j)
+                        continue;
+
+                    var fromId = stations[i].Id;
+                    var toId = stations[j].Id;
+
+                    // Không tạo lại tuyến đã tồn tại
+                    if (existingPairs.Contains((fromId, toId)))
+                        continue;
+
+                    db.StationRoutes.Add(new StationRoute
+                    {
+                        FromStationId = fromId,
+                        ToStationId = toId,
+                        DistanceKm = 1.0m,
+                        IsActive = true
+                    });
+                }
+            }
+
+            await db.SaveChangesAsync();
+        }
+        else
+        {
+            logger.LogWarning(
+                "Không seed tuyến bay vì cần đúng 5 trạm, hiện có {Count} trạm.",
+                stations.Count);
+        }
+
+        // Seed 3 drone mẫu, tránh tạo trùng khi chạy nhiều lần
+        if (stations.Count == 5)
+        {
+            var droneSamples = new[]
+            {
+                new { Code = "DRONE-001", Model = "DJI Matrice 350 RTK", StationId = stations[0].Id },
+                new { Code = "DRONE-002", Model = "DJI Matrice 350 RTK", StationId = stations[1].Id },
+                new { Code = "DRONE-003", Model = "DJI Matrice 350 RTK", StationId = stations[2].Id }
+            };
+
+            var existingCodes = await db.Drones
+                .Select(d => d.DroneCode)
+                .ToListAsync();
+
+            foreach (var sample in droneSamples)
+            {
+                if (existingCodes.Contains(sample.Code))
+                    continue;
+
+                db.Drones.Add(new Drone
+                {
+                    DroneCode = sample.Code,
+                    Model = sample.Model,
+                    MaxPayloadKg = 2.50m,
+                    MaxRangeKm = 15.00m,
+                    CruiseSpeedKmh = 40.0m,
+                    BatteryPct = 100,
+                    Status = "Idle",
+                    CurrentStationId = sample.StationId,
+                    CreatedAtUtc = DateTime.UtcNow,
+                    UpdatedAtUtc = DateTime.UtcNow
+                });
+            }
+
+            await db.SaveChangesAsync();
+        }
+        else
+        {
+            logger.LogWarning(
+                "Không seed drone vì cần đúng 5 trạm, hiện có {Count} trạm.",
+                stations.Count);
+        }
+
         if (bool.TryParse(config["Seed:DemoUsers"], out var seedDemo) && seedDemo)
         {
             var password = config["Seed:DemoPassword"];

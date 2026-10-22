@@ -1,111 +1,58 @@
 
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using SmartDrone.Application.Abstractions;
-using SmartDrone.Application.Auth;
+namespace SmartDrone.Application.Auth;
 
-namespace SmartDrone.Api.Controllers;
+// Dữ liệu đăng ký tài khoản
+public record RegisterRequest(
+    string Email,
+    string Password,
+    string FullName
+);
 
-[ApiController]
-[Route("api/v1/auth")]
-public class AuthController(IAuthService auth) : ControllerBase
+// Dữ liệu đăng nhập
+public record LoginRequest(
+    string Email,
+    string Password
+);
+
+// Kết quả xác thực thành công
+public record AuthResponse(
+    string Token,
+    DateTime ExpiresAtUtc,
+    Guid UserId,
+    string Email,
+    string FullName,
+    List<string> Roles
+);
+
+// Kết quả xử lý đăng ký / đăng nhập
+public class AuthResult
 {
-    private const string TokenCookieName = "smartdrone_auth";
+    public bool Succeeded { get; init; }
 
-    [HttpPost("register")]
-    [AllowAnonymous]
-    public async Task<IActionResult> Register(
-        RegisterRequest request,
-        CancellationToken ct)
+    public AuthResponse? Data { get; init; }
+
+    public List<string> Errors { get; init; } = new();
+
+    public static AuthResult Ok(AuthResponse data)
     {
-        var result = await auth.RegisterAsync(request, ct);
-
-        if (!result.Succeeded || result.Data is null)
+        return new AuthResult
         {
-            return BadRequest(new
-            {
-                errors = result.Errors
-            });
-        }
-
-        SetAuthCookie(result.Data);
-
-        // Không trả JWT trong JSON khi dùng cookie HttpOnly.
-        return Ok(new
-        {
-            result.Data.UserId,
-            result.Data.Email,
-            result.Data.FullName,
-            result.Data.Roles,
-            result.Data.ExpiresAtUtc
-        });
+            Succeeded = true,
+            Data = data
+        };
     }
 
-    [HttpPost("login")]
-    [AllowAnonymous]
-    public async Task<IActionResult> Login(
-        LoginRequest request,
-        CancellationToken ct)
+    public static AuthResult Fail(string error)
     {
-        var result = await auth.LoginAsync(request, ct);
-
-        if (!result.Succeeded || result.Data is null)
-        {
-            return Unauthorized(new
-            {
-                message = "Email hoặc mật khẩu không đúng."
-            });
-        }
-
-        SetAuthCookie(result.Data);
-
-        return Ok(new
-        {
-            result.Data.UserId,
-            result.Data.Email,
-            result.Data.FullName,
-            result.Data.Roles,
-            result.Data.ExpiresAtUtc
-        });
+        return Fail(new[] { error });
     }
 
-    [HttpGet("me")]
-    [Authorize]
-    public IActionResult Me() => Ok(new
+    public static AuthResult Fail(IEnumerable<string> errors)
     {
-        Id = User.FindFirst("sub")?.Value,
-        Email = User.FindFirst("email")?.Value,
-        Name = User.FindFirst("name")?.Value,
-        Roles = User.FindAll("role").Select(c => c.Value).ToArray()
-    });
-
-    [HttpPost("logout")]
-    [AllowAnonymous]
-    public IActionResult Logout()
-    {
-        Response.Cookies.Delete(TokenCookieName, new CookieOptions
+        return new AuthResult
         {
-            HttpOnly = true,
-            Secure = !HttpContext.Request.Host.Host.Equals(
-                "localhost", StringComparison.OrdinalIgnoreCase),
-            SameSite = SameSiteMode.Lax,
-            Path = "/"
-        });
-
-        return Ok(new { message = "Đã đăng xuất." });
-    }
-
-    private void SetAuthCookie(AuthResponse data)
-    {
-        Response.Cookies.Append(TokenCookieName, data.Token, new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = !HttpContext.Request.Host.Host.Equals(
-                "localhost", StringComparison.OrdinalIgnoreCase),
-            SameSite = SameSiteMode.Lax,
-            Expires = new DateTimeOffset(data.ExpiresAtUtc),
-            IsEssential = true,
-            Path = "/"
-        });
+            Succeeded = false,
+            Errors = errors.ToList()
+        };
     }
 }
