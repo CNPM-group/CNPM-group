@@ -30,6 +30,7 @@ builder.Services
     .AddJwtBearer(o =>
     {
         o.MapInboundClaims = false;
+
         o.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -38,10 +39,26 @@ builder.Services
             ValidAudience = jwt.Audience,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Key)),
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(jwt.Key)),
             RoleClaimType = "role",
             NameClaimType = "name",
             ClockSkew = TimeSpan.FromSeconds(30)
+        };
+
+        // Đọc JWT từ cookie HttpOnly.
+        o.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                if (context.Request.Cookies.TryGetValue(
+                    "smartdrone_auth", out var token))
+                {
+                    context.Token = token;
+                }
+
+                return Task.CompletedTask;
+            }
         };
     });
 builder.Services.AddAuthorization();
@@ -54,7 +71,11 @@ builder.Services.AddProblemDetails();
 
 var origins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>()
               ?? new[] { "http://localhost:5173" };
-builder.Services.AddCors(o => o.AddPolicy("web", p => p.WithOrigins(origins).AllowAnyHeader().AllowAnyMethod()));
+builder.Services.AddCors(o => o.AddPolicy("web", p =>
+    p.WithOrigins(origins)
+     .AllowAnyHeader()
+     .AllowAnyMethod()
+     .AllowCredentials()));
 
 builder.Services.AddHealthChecks().AddDbContextCheck<AppDbContext>();
 
