@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,7 +14,6 @@
       min-height: 100vh;
       margin: 0;
     }
-
     .login-box {
       width: 320px;
       padding: 25px;
@@ -22,9 +21,7 @@
       border: 1px solid #aaa;
       border-radius: 12px;
     }
-
     h2, p { text-align: center; }
-
     input, button {
       box-sizing: border-box;
       width: 100%;
@@ -33,7 +30,6 @@
       border-radius: 9px;
       font-size: 14px;
     }
-
     input { border: 1px solid #aaa; }
     button {
       border: none;
@@ -41,7 +37,7 @@
       color: white;
       cursor: pointer;
     }
-
+    #message { overflow-wrap: anywhere; }
     a { color: #168bff; }
   </style>
 </head>
@@ -50,13 +46,54 @@
     <h2>Smart Drone Delivery</h2>
     <p>AI-powered Drone Delivery</p>
 
-    <form>
-      <input type="email" placeholder="Enter your email" required>
-      <input type="password" placeholder="Enter your password" required>
-      <button type="submit">Login</button>
+    <form id="loginForm">
+      <input id="email" type="email" placeholder="Email" autocomplete="email" required>
+      <input id="password" type="password" placeholder="Mật khẩu" autocomplete="current-password" required>
+      <button id="loginButton" type="submit">Đăng nhập</button>
     </form>
 
-    <p><a href="register.html">Create an account</a></p>
+    <p id="message" role="status"></p>
+    <p><a href="register.html">Tạo tài khoản</a></p>
   </main>
+
+  <script>
+    // Thay bằng địa chỉ API thật của nhóm khi đã triển khai backend.
+    const API_BASE_URL = "https://YOUR-API-HOST";
+
+    document.getElementById("loginForm").addEventListener("submit", async function(event) {
+      event.preventDefault();
+
+      const message = document.getElementById("message");
+      const button = document.getElementById("loginButton");
+      button.disabled = true;
+      message.textContent = "Đang đăng nhập...";
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            email: document.getElementById("email").value.trim(),
+            password: document.getElementById("password").value
+          })
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(data.detail || data.title || "Email hoặc mật khẩu không đúng.");
+        }
+
+        // Chỉ báo thành công khi backend trả kết quả thành công.
+        // Không lưu JWT trong localStorage hoặc sessionStorage.
+        message.textContent = "Đăng nhập thành công.";
+      } catch (error) {
+        message.textContent = "Không thể đăng nhập: " + error.message;
+      } finally {
+        button.disabled = false;
+      }
+    });
+  </script>
 </body>
 </html>
