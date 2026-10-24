@@ -1,85 +1,1049 @@
-
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="vi" class="h-full bg-slate-50">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SmartDroneDelivery</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOLTERA - SmartDrone Command & Control Portal</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                    },
+                    colors: {
+                        soltera: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                            900: '#064e3b',
+                            dark: '#0f172a',
+                            surface: '#f8fafc'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+        }
+
+        .soltera-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 1.5rem;
+            box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.03);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .soltera-card:hover {
+            box-shadow: 0 12px 28px -4px rgba(15, 23, 42, 0.06);
+            border-color: #cbd5e1;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        .pulse-emerald {
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+            animation: pulse-green 2s infinite;
+        }
+
+        @keyframes pulse-green {
+            0% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+            }
+        }
+    </style>
 </head>
-<body>
-  <header class="header">
-    <h2>🚁 SmartDroneDelivery</h2>
-    <p>AI-powered Drone Delivery Management Platform</p>
-  </header>
+<body class="h-full flex overflow-hidden antialiased text-slate-800">
 
-  <nav class="navigation">
-    <button onclick="showPage('login')">Đăng nhập</button>
-    <button onclick="showPage('create')">Tạo đơn</button>
-    <button onclick="showPage('orders')">Danh sách đơn</button>
-    <button onclick="showPage('status')">Trạng thái</button>
-    <button onclick="showPage('confirm')">Xác nhận giao</button>
-  </nav>
+    <!-- SIDEBAR NAVIGATION (KAN-20) -->
+    <aside id="sidebar" class="w-72 bg-white border-r border-slate-200 flex flex-col justify-between p-6 flex-shrink-0 z-30 transition-all duration-300">
+        <div>
+            <!-- Brand Logo -->
+            <div class="flex items-center gap-3.5 px-2 py-3 mb-8">
+                <div class="w-11 h-11 rounded-2xl bg-slate-900 flex items-center justify-center text-emerald-400 font-extrabold text-xl shadow-lg shadow-slate-900/10 border border-slate-800">
+                    <i class="fa-solid fa-wind text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-xl tracking-tight text-slate-900 leading-none">SOLTERA</h1>
+                    <p class="text-[10px] font-bold text-emerald-600 tracking-wider uppercase mt-1">Air Command Center</p>
+                </div>
+            </div>
 
-  <main>
-    <section id="login" class="page">
-      <h2>Đăng nhập</h2>
-      <form onsubmit="login(event)">
-        <label>Email</label>
-        <input id="email" type="email" placeholder="Nhập email" required>
-        <label>Mật khẩu</label>
-        <input id="password" type="password" placeholder="Nhập mật khẩu" required>
-        <button type="submit">Đăng nhập</button>
-      </form>
-      <p id="loginMessage"></p>
-    </section>
+            <!-- Navigation Links -->
+            <nav class="space-y-1.5">
+                <button onclick="switchTab('dashboard')" id="nav-dashboard" class="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl font-semibold text-sm transition-all bg-slate-900 text-white shadow-md shadow-slate-900/10">
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-chart-pie w-5 text-emerald-400 text-center"></i>
+                        <span>Dashboard</span>
+                    </div>
+                    <span class="text-[10px] bg-slate-800 text-emerald-400 font-extrabold px-2 py-0.5 rounded-md border border-slate-700">KAN-21</span>
+                </button>
 
-    <section id="create" class="page hidden">
-      <h2>Tạo đơn giao hàng</h2>
-      <form onsubmit="createOrder(event)">
-        <label>Địa chỉ lấy hàng</label>
-        <input id="pickup" placeholder="Nhập địa chỉ lấy hàng" required>
-        <label>Địa chỉ giao hàng</label>
-        <input id="delivery" placeholder="Nhập địa chỉ giao hàng" required>
-        <label>Tên người nhận</label>
-        <input id="recipient" placeholder="Nhập tên người nhận" required>
-        <label>Số điện thoại</label>
-        <input id="phone" type="tel" placeholder="Nhập số điện thoại" required>
-        <label>Mô tả kiện hàng</label>
-        <input id="description" placeholder="Ví dụ: Tài liệu" required>
-        <label>Khối lượng (kg)</label>
-        <input id="weight" type="number" min="0.1" step="0.1" required>
-        <button type="submit">Tạo đơn hàng</button>
-      </form>
-      <p id="createMessage"></p>
-    </section>
+                <button onclick="switchTab('approvals')" id="nav-approvals" class="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl font-semibold text-sm transition-all text-slate-500 hover:bg-slate-100 hover:text-slate-900">
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-[#059669] fa-shield-halved w-5 text-center text-slate-400"></i>
+                        <span>Duyệt Đơn Hàng</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span id="nav-pending-badge" class="px-2 py-0.5 text-xs font-bold rounded-full bg-amber-100 text-amber-700 border border-amber-200">3</span>
+                    </div>
+                </button>
 
-    <section id="orders" class="page hidden">
-      <h2>Danh sách đơn hàng</h2>
-      <div id="orderList">Chưa có đơn hàng.</div>
-    </section>
+                <button onclick="switchTab('stations')" id="nav-stations" class="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl font-semibold text-sm transition-all text-slate-500 hover:bg-slate-100 hover:text-slate-900">
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-charging-station w-5 text-center text-slate-400"></i>
+                        <span>Quản Lý Trạm</span>
+                    </div>
+                    <span class="text-[10px] text-slate-400 font-bold px-1.5 py-0.5">KAN-23</span>
+                </button>
 
-    <section id="status" class="page hidden">
-      <h2>Trạng thái đơn hàng</h2>
-      <label>Chọn đơn hàng</label>
-      <select id="statusOrder" onchange="showStatus()"></select>
-      <p id="statusInfo">Chưa có đơn hàng.</p>
-      <button onclick="advanceStatus()">Cập nhật trạng thái mẫu</button>
-    </section>
+                <button onclick="switchTab('users')" id="nav-users" class="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl font-semibold text-sm transition-all text-slate-500 hover:bg-slate-100 hover:text-slate-900">
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-users-gear w-5 text-center text-slate-400"></i>
+                        <span>Phân Quyền User</span>
+                    </div>
+                    <span class="text-[10px] text-slate-400 font-bold px-1.5 py-0.5">KAN-43</span>
+                </button>
+            </nav>
+        </div>
 
-    <section id="confirm" class="page hidden">
-      <h2>Xác nhận giao hàng</h2>
-      <label>Chọn đơn hàng</label>
-      <select id="confirmOrder"></select>
-      <p id="confirmInfo">Vui lòng chọn đơn hàng.</p>
-      <button onclick="confirmDelivery()">Xác nhận đã nhận hàng</button>
-    </section>
-  </main>
+        <!-- System Profile Footer -->
+        <div class="pt-6 border-t border-slate-200/80 flex items-center justify-between px-1">
+            <div class="flex items-center gap-3 overflow-hidden">
+                <div class="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-extrabold text-sm border border-emerald-200 flex-shrink-0">
+                    NH
+                </div>
+                <div class="overflow-hidden">
+                    <p class="text-xs font-extrabold text-slate-900 truncate">Nguyễn Mậu Huỳnh</p>
+                    <p class="text-[11px] font-semibold text-emerald-600 truncate">Fleet Operator Lead</p>
+                </div>
+            </div>
+            <button onclick="showToast('Đã sao chép phiên làm việc', 'info')" class="text-slate-400 hover:text-slate-600 p-2 rounded-xl hover:bg-slate-100 transition">
+                <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i>
+            </button>
+        </div>
+    </aside>
 
-  <footer>
-    <p>SmartDroneDelivery | Đồ án Công nghệ phần mềm</p>
-  </footer>
+    <!-- MAIN CONTENT WRAPPER -->
+    <main class="flex-1 flex flex-col min-w-0 overflow-hidden bg-slate-50">
+        
+        <!-- TOP HEADER BAR (KAN-20) -->
+        <header class="h-20 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-8 flex items-center justify-between sticky top-0 z-20">
+            <div class="flex items-center gap-4">
+                <button onclick="toggleSidebar()" class="lg:hidden p-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h2 id="page-title" class="text-xl font-extrabold text-slate-900 tracking-tight">Dashboard & Operations</h2>
+                        <span id="page-badge" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">KAN-21</span>
+                    </div>
+                    <p class="text-xs font-medium text-slate-400 mt-0.5">Hệ thống giám sát điều hành Fleet Drone thời gian thực</p>
+                </div>
+            </div>
 
-  <script src="script.js"></script>
+            <!-- Top Header Actions & Status -->
+            <div class="flex items-center gap-4">
+                <!-- System Status Indicator -->
+                <div class="hidden sm:flex items-center gap-2.5 px-3.5 py-1.5 rounded-2xl bg-emerald-50/80 border border-emerald-200/80 text-emerald-800 text-xs font-bold">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 pulse-emerald"></span>
+                    <span>Airspace Operational</span>
+                </div>
+
+                <!-- Clock Widget -->
+                <div class="hidden md:block px-3.5 py-1.5 rounded-2xl bg-slate-100 text-slate-700 text-xs font-bold font-mono border border-slate-200" id="live-clock">
+                    12:00:00 UTC+7
+                </div>
+
+                <!-- Action Button -->
+                <button onclick="refreshData()" class="p-2.5 rounded-2xl border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition flex items-center justify-center">
+                    <i class="fa-solid fa-rotate text-sm"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- DYNAMIC CONTENT AREA -->
+        <div class="flex-1 p-6 md:p-8 overflow-y-auto space-y-8">
+
+            <!-- ================= TAB 1: DASHBOARD (KAN-21) ================= -->
+            <div id="tab-dashboard" class="space-y-8">
+                
+                <!-- Soltera Clean Hero Banner -->
+                <div class="soltera-card p-8 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white relative overflow-hidden flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 border-slate-800">
+                    <div class="absolute -right-10 -bottom-10 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                    
+                    <div class="space-y-3 z-10 max-w-2xl">
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-xs font-bold uppercase tracking-wider">
+                            <i class="fa-solid fa-bolt text-xs"></i> Soltera Dispatch AI 4.0
+                        </div>
+                        <h2 class="text-2xl md:text-3xl font-black tracking-tight leading-tight">
+                            Hệ Thống Phân Luồng Bay Tự Động & Tiết Kiệm Năng Lượng
+                        </h2>
+                        <p class="text-slate-300 text-sm leading-relaxed font-normal">
+                            Điều phối đường bay tối ưu cho hơn 15 trạm sạc tự động. Tự động cảnh báo thời tiết và cân bằng tải trọng hàng hóa chuẩn công nghiệp.
+                        </p>
+                    </div>
+
+                    <div class="flex items-center gap-3 z-10 w-full lg:w-auto">
+                        <div class="bg-white/10 backdrop-blur-md border border-white/15 p-4 rounded-2xl flex-1 lg:flex-none text-center min-w-[120px]">
+                            <span class="text-2xl font-black text-emerald-400">99.2%</span>
+                            <p class="text-[11px] font-semibold text-slate-300 mt-0.5">Độ Chính Xác</p>
+                        </div>
+                        <div class="bg-white/10 backdrop-blur-md border border-white/15 p-4 rounded-2xl flex-1 lg:flex-none text-center min-w-[120px]">
+                            <span class="text-2xl font-black text-white" id="stat-active-drones">12/15</span>
+                            <p class="text-[11px] font-semibold text-slate-300 mt-0.5">Drone Sẵn Sàng</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KPI Metric Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                    <div class="soltera-card p-6">
+                        <div class="flex items-center justify-between text-slate-400 mb-3">
+                            <span class="text-xs font-bold uppercase tracking-wider">Tổng Đơn Hoàn Thành</span>
+                            <div class="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600">
+                                <i class="fa-solid fa-box-check text-xs"></i>
+                            </div>
+                        </div>
+                        <h3 class="text-3xl font-extrabold text-slate-900 tracking-tight">1,482</h3>
+                        <div class="flex items-center gap-1.5 mt-2 text-xs font-bold text-emerald-600">
+                            <i class="fa-solid fa-arrow-trend-up"></i>
+                            <span>+14.2% so với tuần trước</span>
+                        </div>
+                    </div>
+
+                    <div class="soltera-card p-6">
+                        <div class="flex items-center justify-between text-slate-400 mb-3">
+                            <span class="text-xs font-bold uppercase tracking-wider">Đơn Chờ Xét Duyệt</span>
+                            <div class="w-8 h-8 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600">
+                                <i class="fa-solid fa-clock text-xs"></i>
+                            </div>
+                        </div>
+                        <h3 class="text-3xl font-extrabold text-amber-600 tracking-tight" id="kpi-pending-count">3</h3>
+                        <div class="flex items-center gap-1.5 mt-2 text-xs font-semibold text-slate-500">
+                            <span>Cần ban quản lý duyệt ngay</span>
+                        </div>
+                    </div>
+
+                    <div class="soltera-card p-6">
+                        <div class="flex items-center justify-between text-slate-400 mb-3">
+                            <span class="text-xs font-bold uppercase tracking-wider">Tỉ Lệ Pin Trung Bình</span>
+                            <div class="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+                                <i class="fa-solid fa-battery-three-quarters text-xs"></i>
+                            </div>
+                        </div>
+                        <h3 class="text-3xl font-extrabold text-slate-900 tracking-tight">88.5%</h3>
+                        <div class="flex items-center gap-1.5 mt-2 text-xs font-bold text-emerald-600">
+                            <i class="fa-solid fa-bolt"></i>
+                            <span>100% trạm sạc đang ổn định</span>
+                        </div>
+                    </div>
+
+                    <div class="soltera-card p-6">
+                        <div class="flex items-center justify-between text-slate-400 mb-3">
+                            <span class="text-xs font-bold uppercase tracking-wider">Tiết Kiệm Năng Lượng</span>
+                            <div class="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+                                <i class="fa-solid fa-leaf text-xs"></i>
+                            </div>
+                        </div>
+                        <h3 class="text-3xl font-extrabold text-emerald-600 tracking-tight">32% CO₂</h3>
+                        <div class="flex items-center gap-1.5 mt-2 text-xs font-bold text-emerald-600">
+                            <i class="fa-solid fa-circle-check"></i>
+                            <span>Đạt chuẩn Soltera Green Tech</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interactive Radar Simulation Widget & Quick Telemetry -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Live Airspace Radar Canvas -->
+                    <div class="soltera-card p-6 lg:col-span-2 flex flex-col justify-between">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h3 class="font-bold text-slate-900 text-base">Radar Vùng Bay Thực Tế (GIS Map)</h3>
+                                <p class="text-xs text-slate-400">Nhấp vào Drone trên Radar để xem thông số kĩ thuật</p>
+                            </div>
+                            <span class="px-3 py-1 rounded-full text-xs font-extrabold bg-slate-900 text-emerald-400 border border-slate-800">
+                                <i class="fa-solid fa-radar mr-1 animate-spin"></i> LIVE SWEEP
+                            </span>
+                        </div>
+
+                        <div class="relative w-full h-72 bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center">
+                            <canvas id="radarCanvas" class="w-full h-full cursor-pointer"></canvas>
+                            <!-- Radar Center Label -->
+                            <div class="absolute bottom-3 left-3 bg-slate-900/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-700 text-[11px] font-mono text-emerald-400">
+                                Center: Soltera Main Hub (10.7626, 106.6820)
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Selected Drone Telemetry Panel -->
+                    <div class="soltera-card p-6 flex flex-col justify-between bg-slate-900 text-white border-slate-800">
+                        <div>
+                            <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+                                <div class="flex items-center gap-2.5">
+                                    <div class="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                                        <i class="fa-solid fa-plane-up"></i>
+                                    </div>
+                                    <div>
+                                        <h4 id="telemetry-id" class="font-bold text-base text-white">DRONE-101</h4>
+                                        <p id="telemetry-status" class="text-xs text-emerald-400 font-semibold">Đang Thực Hiện Nhiệm Vụ</p>
+                                    </div>
+                                </div>
+                                <span class="px-2.5 py-1 rounded-lg text-[10px] font-extrabold bg-slate-800 text-slate-300 border border-slate-700">SOL-X4</span>
+                            </div>
+
+                            <div class="mt-6 space-y-4">
+                                <div>
+                                    <div class="flex justify-between text-xs text-slate-400 font-semibold mb-1">
+                                        <span>Dung Lượng Pin</span>
+                                        <span id="telemetry-battery-txt" class="text-emerald-400 font-bold">92%</span>
+                                    </div>
+                                    <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                                        <div id="telemetry-battery-bar" class="bg-emerald-500 h-full rounded-full transition-all duration-500" style="width: 92%"></div>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-3 pt-2">
+                                    <div class="bg-slate-800/60 p-3 rounded-xl border border-slate-800">
+                                        <span class="text-[10px] uppercase font-bold text-slate-400">Vận Tốc</span>
+                                        <p id="telemetry-speed" class="text-lg font-extrabold text-white mt-0.5">48 km/h</p>
+                                    </div>
+                                    <div class="bg-slate-800/60 p-3 rounded-xl border border-slate-800">
+                                        <span class="text-[10px] uppercase font-bold text-slate-400">Độ Cao</span>
+                                        <p id="telemetry-alt" class="text-lg font-extrabold text-white mt-0.5">120 m</p>
+                                    </div>
+                                </div>
+
+                                <div class="bg-slate-800/60 p-3.5 rounded-xl border border-slate-800 space-y-1.5">
+                                    <span class="text-[10px] uppercase font-bold text-slate-400">Hành Trình Giao Hàng</span>
+                                    <p id="telemetry-route" class="text-xs font-semibold text-slate-200">Trạm Soltera Alpha ➔ Landing Pad #3</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button onclick="showToast('Đã gửi lệnh thu hồi Drone khẩn cấp!', 'warning')" class="w-full mt-6 py-2.5 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-triangle-exclamation"></i> Lệnh Thu Hồi Khẩn Cấp
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Filterable & Searchable Orders Table (KAN-21) -->
+                <div class="soltera-card p-6 space-y-5">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <h3 class="text-base font-bold text-slate-900">Danh Sách Tra Cứu Đơn Hàng Vận Chuyển</h3>
+                            <p class="text-xs text-slate-400">Tất cả thông tin vận đơn thời gian thực trong hệ thống</p>
+                        </div>
+
+                        <!-- Search & Filter Controls -->
+                        <div class="flex flex-wrap items-center gap-3">
+                            <div class="relative">
+                                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-xs text-slate-400"></i>
+                                <input type="text" id="search-input" oninput="renderDashboardOrders()" placeholder="Tìm theo mã đơn, khách hàng..." class="pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-slate-800 w-64">
+                            </div>
+
+                            <select id="status-filter" onchange="renderDashboardOrders()" class="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:border-slate-800 cursor-pointer">
+                                <option value="ALL">Tất Cả Trạng Thái</option>
+                                <option value="PENDING">Chờ Xét Duyệt</option>
+                                <option value="DELIVERING">Đang Vận Chuyển</option>
+                                <option value="COMPLETED">Đã Hoàn Thành</option>
+                                <option value="REJECTED">Đã Từ Chối</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Orders Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider border-b border-slate-100">
+                                    <th class="py-3.5 px-4">Mã Đơn Hàng</th>
+                                    <th class="py-3.5 px-4">Khách Hàng</th>
+                                    <th class="py-3.5 px-4">Điểm Giao Hàng</th>
+                                    <th class="py-3.5 px-4">Tải Trọng</th>
+                                    <th class="py-3.5 px-4">Trạng Thái</th>
+                                    <th class="py-3.5 px-4 text-right">Chi Tiết</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dash-orders-table" class="divide-y divide-slate-100 text-xs font-semibold text-slate-700">
+                                <!-- JS Populated -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= TAB 2: ORDER APPROVALS (KAN-22) ================= -->
+            <div id="tab-approvals" class="space-y-6 hidden">
+                <div class="soltera-card p-6 space-y-6">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h3 class="text-lg font-bold text-slate-900">Màn Hình Duyệt Đơn Hàng Bay</h3>
+                                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200" id="approval-count-tag">3 Đơn Chờ</span>
+                            </div>
+                            <p class="text-xs text-slate-400 mt-0.5">Kiểm tra thông số kỹ thuật và tải trọng trước khi cấp phép cất cánh</p>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <button onclick="approveAllPending()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-2">
+                                <i class="fa-solid fa-check-double"></i> Duyệt Tất Cả Đơn Sợp
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Pending Approval Queue Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider border-b border-slate-100">
+                                    <th class="py-3.5 px-4">Mã Đơn</th>
+                                    <th class="py-3.5 px-4">Khách Hàng</th>
+                                    <th class="py-3.5 px-4">Địa Điểm Đáp</th>
+                                    <th class="py-3.5 px-4">Khối Lượng</th>
+                                    <th class="py-3.5 px-4">Thời Gian Yêu Cầu</th>
+                                    <th class="py-3.5 px-4 text-right">Thao Tác Duyệt</th>
+                                </tr>
+                            </thead>
+                            <tbody id="approvals-table" class="divide-y divide-slate-100 text-xs font-semibold text-slate-700">
+                                <!-- JS Populated -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= TAB 3: STATION MANAGEMENT (KAN-23) ================= -->
+            <div id="tab-stations" class="space-y-6 hidden">
+                <div class="soltera-card p-6 space-y-6">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-900">Danh Sách Trạm Đáp & Sạc Tự Động (Landing Stations)</h3>
+                            <p class="text-xs text-slate-400 mt-0.5">Giám sát tọa độ GIS, dung lượng pin và trạng thái kỹ thuật trạm</p>
+                        </div>
+
+                        <button onclick="addNewStation()" class="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition shadow-sm flex items-center gap-2">
+                            <i class="fa-solid fa-plus text-xs"></i> Thêm Trạm Đáp Mới
+                        </button>
+                    </div>
+
+                    <!-- Station Grid/Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider border-b border-slate-100">
+                                    <th class="py-3.5 px-4">Mã Trạm</th>
+                                    <th class="py-3.5 px-4">Tên Trạm Đáp</th>
+                                    <th class="py-3.5 px-4">Tọa Độ GIS</th>
+                                    <th class="py-3.5 px-4">Dung Lượng Pin Trạm</th>
+                                    <th class="py-3.5 px-4">Trạng Thái Vận Hành</th>
+                                    <th class="py-3.5 px-4 text-right">Đổi Trạng Thái</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stations-table" class="divide-y divide-slate-100 text-xs font-semibold text-slate-700">
+                                <!-- JS Populated -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= TAB 4: USER MANAGEMENT (KAN-43) ================= -->
+            <div id="tab-users" class="space-y-6 hidden">
+                <div class="soltera-card p-6 space-y-6">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-900">Quản Lý Người Dùng & Phân Quyền Vai Trò</h3>
+                            <p class="text-xs text-slate-400 mt-0.5">Thay đổi quyền truy cập tức thì cho các tài khoản trong tổ chức</p>
+                        </div>
+
+                        <button onclick="showToast('Tính năng Mời User Mới sẵn sàng', 'info')" class="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition shadow-sm flex items-center gap-2">
+                            <i class="fa-solid fa-user-plus text-xs"></i> Mời Thành Viên
+                        </button>
+                    </div>
+
+                    <!-- User Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider border-b border-slate-100">
+                                    <th class="py-3.5 px-4">ID User</th>
+                                    <th class="py-3.5 px-4">Thành Viên</th>
+                                    <th class="py-3.5 px-4">Email Liên Hệ</th>
+                                    <th class="py-3.5 px-4">Vai Trò Hiện Tại</th>
+                                    <th class="py-3.5 px-4 text-right">Cập Nhật Quyền Hạn</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-table" class="divide-y divide-slate-100 text-xs font-semibold text-slate-700">
+                                <!-- JS Populated -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- REJECTION MODAL (KAN-22) -->
+    <div id="reject-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-white border border-slate-200 rounded-3xl w-full max-w-md p-6 space-y-5 shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center font-bold text-lg border border-rose-200">
+                        <i class="fa-solid fa-circle-xmark"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-900 text-base">Từ Chối Đơn Hàng</h3>
+                        <p id="modal-order-id-label" class="text-xs text-slate-400">Mã đơn: ORD-0000</p>
+                    </div>
+                </div>
+                <button onclick="closeRejectModal()" class="text-slate-400 hover:text-slate-600 p-2 rounded-xl">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1.5">Lý do từ chối chuyến bay</label>
+                    <select id="modal-reason-select" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-slate-800">
+                        <option value="Thời tiết không an toàn (Gió mạnh/Mưa)">Thời tiết không an toàn (Gió mạnh/Mưa)</option>
+                        <option value="Vượt quá tải trọng cho phép (> 5.0 kg)">Vượt quá tải trọng cho phép (> 5.0 kg)</option>
+                        <option value="Điểm đáp nằm trong vùng cấm bay GIS">Điểm đáp nằm trong vùng cấm bay GIS</option>
+                        <option value="Khách hàng yêu cầu hủy đơn">Khách hàng yêu cầu hủy đơn</option>
+                        <option value="Khác">Lý do khác...</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1.5">Ghi chú bổ sung</label>
+                    <textarea id="modal-notes" rows="3" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-medium text-slate-800 focus:outline-none focus:border-slate-800" placeholder="Gửi tin nhắn phản hồi tới khách hàng..."></textarea>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                <button onclick="closeRejectModal()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition">
+                    Hủy Bỏ
+                </button>
+                <button onclick="confirmRejectOrder()" class="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs transition shadow-sm">
+                    Xác Nhận Từ Chối
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- APPLICATION LOGIC & STATE -->
+    <script>
+        // GLOBAL APP STATE
+        const appState = {
+            activeTab: 'dashboard',
+            rejectOrderId: null,
+            orders: [
+                { id: "ORD-9081", customer: "Nguyễn Văn A", address: "Khu A - Smart Campus", weight: "1.2 kg", status: "PENDING", time: "10 phút trước" },
+                { id: "ORD-9082", customer: "Trần Thị B", address: "Trạm Landing Pad #3", weight: "2.5 kg", status: "PENDING", time: "15 phút trước" },
+                { id: "ORD-9083", customer: "Lê Văn C", address: "Khu C - KTX Sinh Viên", weight: "0.8 kg", status: "PENDING", time: "22 phút trước" },
+                { id: "ORD-9079", customer: "Phạm Minh D", address: "Tòa nhà Innovation #1", weight: "1.5 kg", status: "DELIVERING", time: "30 phút trước" },
+                { id: "ORD-9075", customer: "Hoàng Anh E", address: "Cổng Trung Tâm BD", weight: "3.0 kg", status: "COMPLETED", time: "1 giờ trước" },
+                { id: "ORD-9071", customer: "Đặng Quốc F", address: "Khu Công Nghệ Cao", weight: "4.1 kg", status: "COMPLETED", time: "2 giờ trước" }
+            ],
+            stations: [
+                { id: "ST-01", name: "Trạm Soltera Central Hub", location: "10.7626, 106.6820", battery: 98, status: "OPERATIONAL" },
+                { id: "ST-02", name: "Trạm Sạc North Fast Pad", location: "10.7710, 106.6900", battery: 45, status: "CHARGING" },
+                { id: "ST-03", name: "Trạm Landing Pad Campus C", location: "10.7580, 106.6750", battery: 100, status: "OPERATIONAL" },
+                { id: "ST-04", name: "Trạm Eco Park Reserve", location: "10.7490, 106.7010", battery: 15, status: "MAINTENANCE" }
+            ],
+            users: [
+                { id: "USR-101", name: "Nguyễn Mậu Huỳnh", email: "huynh.nm@soltera.io", role: "ADMIN" },
+                { id: "USR-102", name: "Tiến Nguyễn", email: "tien.nguyen@soltera.io", role: "OPERATOR" },
+                { id: "USR-103", name: "Elena Rostova", email: "elena.r@soltera.io", role: "OPERATOR" },
+                { id: "USR-104", name: "Khách Hàng VIP Demo", email: "customer.demo@gmail.com", role: "CUSTOMER" }
+            ],
+            drones: [
+                { id: "DRONE-101", battery: 92, speed: "48 km/h", alt: "120 m", status: "Đang Thực Hiện Nhiệm Vụ", route: "Trạm Soltera Alpha ➔ Landing Pad #3", x: 120, y: 100 },
+                { id: "DRONE-102", battery: 64, speed: "52 km/h", alt: "105 m", status: "Đang Về Trạm Sạc", route: "Smart Campus ➔ Central Hub", x: 220, y: 160 },
+                { id: "DRONE-103", battery: 100, speed: "0 km/h", alt: "0 m", status: "Sẵn Sàng Tại Trạm", route: "Đứng Yên (Docking)", x: 150, y: 220 }
+            ]
+        };
+
+        // RENDER FUNCTIONS
+        function renderDashboardOrders() {
+            const tbody = document.getElementById('dash-orders-table');
+            const searchVal = document.getElementById('search-input').value.toLowerCase();
+            const filterVal = document.getElementById('status-filter').value;
+
+            const filtered = appState.orders.filter(o => {
+                const matchSearch = o.id.toLowerCase().includes(searchVal) || o.customer.toLowerCase().includes(searchVal) || o.address.toLowerCase().includes(searchVal);
+                const matchStatus = filterVal === 'ALL' || o.status === filterVal;
+                return matchSearch && matchStatus;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-400 font-medium">Không tìm thấy đơn hàng phù hợp.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(o => `
+                <tr class="hover:bg-slate-50 transition">
+                    <td class="py-4 px-4 font-bold text-slate-900">${o.id}</td>
+                    <td class="py-4 px-4 font-bold text-slate-800">${o.customer}</td>
+                    <td class="py-4 px-4 text-slate-500">${o.address}</td>
+                    <td class="py-4 px-4 font-mono text-slate-600">${o.weight}</td>
+                    <td class="py-4 px-4">${getStatusBadge(o.status)}</td>
+                    <td class="py-4 px-4 text-right">
+                        <button onclick="showToast('Xem chi tiết đơn ${o.id}', 'info')" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-800 hover:bg-slate-100">
+                            <i class="fa-solid fa-chevron-right text-xs"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+
+            // Update KPI count
+            const pendingCount = appState.orders.filter(o => o.status === 'PENDING').length;
+            document.getElementById('kpi-pending-count').innerText = pendingCount;
+            document.getElementById('nav-pending-badge').innerText = pendingCount;
+            document.getElementById('approval-count-tag').innerText = `${pendingCount} Đơn Chờ`;
+        }
+
+        function renderApprovalsTable() {
+            const tbody = document.getElementById('approvals-table');
+            const pending = appState.orders.filter(o => o.status === 'PENDING');
+
+            if (pending.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="py-12 text-center text-slate-400 font-medium">
+                            <div class="flex flex-col items-center gap-2">
+                                <i class="fa-solid fa-circle-check text-2xl text-emerald-500"></i>
+                                <span>Tất cả đơn hàng chờ đã được phê duyệt!</span>
+                            </div>
+                        </td>
+                    </tr>`;
+                return;
+            }
+
+            tbody.innerHTML = pending.map(o => `
+                <tr class="hover:bg-slate-50 transition">
+                    <td class="py-4 px-4 font-bold text-amber-600">${o.id}</td>
+                    <td class="py-4 px-4 font-bold text-slate-800">${o.customer}</td>
+                    <td class="py-4 px-4 text-slate-500">${o.address}</td>
+                    <td class="py-4 px-4 font-mono font-bold text-slate-700">${o.weight}</td>
+                    <td class="py-4 px-4 text-slate-400 text-xs">${o.time}</td>
+                    <td class="py-4 px-4 text-right">
+                        <div class="flex items-center justify-end gap-2">
+                            <button onclick="approveOrder('${o.id}')" class="px-3.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold rounded-xl text-xs transition border border-emerald-200 flex items-center gap-1.5">
+                                <i class="fa-solid fa-check"></i> Duyệt Bay
+                            </button>
+                            <button onclick="openRejectModal('${o.id}')" class="px-3.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl text-xs transition border border-rose-200 flex items-center gap-1.5">
+                                <i class="fa-solid fa-xmark"></i> Từ Chối
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderStationsTable() {
+            const tbody = document.getElementById('stations-table');
+            tbody.innerHTML = appState.stations.map(s => `
+                <tr class="hover:bg-slate-50 transition">
+                    <td class="py-4 px-4 font-bold text-slate-900 font-mono">${s.id}</td>
+                    <td class="py-4 px-4 font-bold text-slate-800">${s.name}</td>
+                    <td class="py-4 px-4 text-xs font-mono text-slate-400">${s.location}</td>
+                    <td class="py-4 px-4">
+                        <div class="flex items-center gap-3 max-w-[160px]">
+                            <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden border border-slate-200">
+                                <div class="h-full rounded-full ${s.battery < 20 ? 'bg-rose-500' : (s.battery < 50 ? 'bg-amber-500' : 'bg-emerald-500')}" style="width: ${s.battery}%"></div>
+                            </div>
+                            <span class="text-xs font-bold text-slate-700 font-mono">${s.battery}%</span>
+                        </div>
+                    </td>
+                    <td class="py-4 px-4">${getStationBadge(s.status)}</td>
+                    <td class="py-4 px-4 text-right">
+                        <select onchange="updateStationStatus('${s.id}', this.value)" class="bg-slate-50 border border-slate-200 text-xs text-slate-700 font-bold rounded-xl px-3 py-1.5 focus:outline-none cursor-pointer">
+                            <option value="OPERATIONAL" ${s.status === 'OPERATIONAL' ? 'selected' : ''}>Hoạt Động</option>
+                            <option value="CHARGING" ${s.status === 'CHARGING' ? 'selected' : ''}>Đang Sạc</option>
+                            <option value="MAINTENANCE" ${s.status === 'MAINTENANCE' ? 'selected' : ''}>Bảo Trì</option>
+                        </select>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderUsersTable() {
+            const tbody = document.getElementById('users-table');
+            tbody.innerHTML = appState.users.map(u => `
+                <tr class="hover:bg-slate-50 transition">
+                    <td class="py-4 px-4 font-mono text-xs font-bold text-slate-400">${u.id}</td>
+                    <td class="py-4 px-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-slate-100 text-slate-700 font-extrabold flex items-center justify-center text-xs border border-slate-200">
+                                ${u.name.charAt(0)}
+                            </div>
+                            <span class="font-bold text-slate-900">${u.name}</span>
+                        </div>
+                    </td>
+                    <td class="py-4 px-4 text-slate-500">${u.email}</td>
+                    <td class="py-4 px-4">${getRoleBadge(u.role)}</td>
+                    <td class="py-4 px-4 text-right">
+                        <select onchange="updateUserRole('${u.id}', this.value)" class="bg-slate-50 border border-slate-200 text-xs text-slate-700 font-bold rounded-xl px-3 py-1.5 focus:outline-none cursor-pointer">
+                            <option value="ADMIN" ${u.role === 'ADMIN' ? 'selected' : ''}>ADMIN</option>
+                            <option value="OPERATOR" ${u.role === 'OPERATOR' ? 'selected' : ''}>OPERATOR</option>
+                            <option value="CUSTOMER" ${u.role === 'CUSTOMER' ? 'selected' : ''}>CUSTOMER</option>
+                        </select>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // BADGE HELPERS
+        function getStatusBadge(status) {
+            if (status === 'PENDING') return `<span class="px-3 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">Chờ Duyệt</span>`;
+            if (status === 'DELIVERING') return `<span class="px-3 py-1 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200">Đang Bay Giao</span>`;
+            if (status === 'COMPLETED') return `<span class="px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Hoàn Thành</span>`;
+            return `<span class="px-3 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">Đã Từ Chối</span>`;
+        }
+
+        function getStationBadge(status) {
+            if (status === 'OPERATIONAL') return `<span class="px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Sẵn Sàng</span>`;
+            if (status === 'CHARGING') return `<span class="px-3 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">Đang Sạc</span>`;
+            return `<span class="px-3 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">Đang Bảo Trì</span>`;
+        }
+
+        function getRoleBadge(role) {
+            if (role === 'ADMIN') return `<span class="px-2.5 py-1 rounded-lg text-[10px] font-extrabold bg-purple-50 text-purple-700 border border-purple-200">ADMIN</span>`;
+            if (role === 'OPERATOR') return `<span class="px-2.5 py-1 rounded-lg text-[10px] font-extrabold bg-blue-50 text-blue-700 border border-blue-200">OPERATOR</span>`;
+            return `<span class="px-2.5 py-1 rounded-lg text-[10px] font-extrabold bg-slate-100 text-slate-700 border border-slate-200">CUSTOMER</span>`;
+        }
+
+        // ACTIONS & INTERACTION LOGIC
+        function switchTab(tabKey) {
+            appState.activeTab = tabKey;
+            
+            ['dashboard', 'approvals', 'stations', 'users'].forEach(t => {
+                document.getElementById(`tab-${t}`).classList.add('hidden');
+                const navBtn = document.getElementById(`nav-${t}`);
+                navBtn.className = "w-full flex items-center justify-between px-4 py-3.5 rounded-2xl font-semibold text-sm transition-all text-slate-500 hover:bg-slate-100 hover:text-slate-900";
+            });
+
+            document.getElementById(`tab-${tabKey}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`nav-${tabKey}`);
+            activeBtn.className = "w-full flex items-center justify-between px-4 py-3.5 rounded-2xl font-semibold text-sm transition-all bg-slate-900 text-white shadow-md shadow-slate-900/10";
+
+            const titles = {
+                dashboard: { title: 'Dashboard & Operations', badge: 'KAN-21' },
+                approvals: { title: 'Duyệt Đơn Hàng Bay', badge: 'KAN-22' },
+                stations: { title: 'Quản Lý Trạm Landing Pad', badge: 'KAN-23' },
+                users: { title: 'Quản Lý Người Dùng & Phân Quyền', badge: 'KAN-43' }
+            };
+
+            document.getElementById('page-title').innerText = titles[tabKey].title;
+            document.getElementById('page-badge').innerText = titles[tabKey].badge;
+        }
+
+        function approveOrder(id) {
+            const item = appState.orders.find(o => o.id === id);
+            if (item) {
+                item.status = 'DELIVERING';
+                showToast(`Đã duyệt cất cánh thành công cho đơn ${id}`, 'success');
+                renderDashboardOrders();
+                renderApprovalsTable();
+            }
+        }
+
+        function approveAllPending() {
+            let count = 0;
+            appState.orders.forEach(o => {
+                if (o.status === 'PENDING') {
+                    o.status = 'DELIVERING';
+                    count++;
+                }
+            });
+            if (count > 0) {
+                showToast(`Đã phê duyệt ${count} đơn hàng chờ!`, 'success');
+                renderDashboardOrders();
+                renderApprovalsTable();
+            } else {
+                showToast('Không có đơn nào chờ duyệt.', 'info');
+            }
+        }
+
+        function openRejectModal(id) {
+            appState.rejectOrderId = id;
+            document.getElementById('modal-order-id-label').innerText = `Mã đơn: ${id}`;
+            document.getElementById('reject-modal').classList.remove('hidden');
+            document.getElementById('reject-modal').classList.add('flex');
+        }
+
+        function closeRejectModal() {
+            document.getElementById('reject-modal').classList.add('hidden');
+            document.getElementById('reject-modal').classList.remove('flex');
+            document.getElementById('modal-notes').value = '';
+        }
+
+        function confirmRejectOrder() {
+            const id = appState.rejectOrderId;
+            const item = appState.orders.find(o => o.id === id);
+            if (item) {
+                item.status = 'REJECTED';
+                showToast(`Đã từ chối cấp phép cho đơn ${id}`, 'danger');
+                renderDashboardOrders();
+                renderApprovalsTable();
+            }
+            closeRejectModal();
+        }
+
+        function updateStationStatus(id, newStatus) {
+            const st = appState.stations.find(s => s.id === id);
+            if (st) {
+                st.status = newStatus;
+                showToast(`Trạm ${id} đã chuyển trạng thái: ${newStatus}`, 'info');
+                renderStationsTable();
+            }
+        }
+
+        function addNewStation() {
+            const newId = `ST-0${appState.stations.length + 1}`;
+            appState.stations.push({
+                id: newId,
+                name: `Trạm Dự Phòng ${newId}`,
+                location: "10.7680, 106.6870",
+                battery: 100,
+                status: "OPERATIONAL"
+            });
+            showToast(`Đã khởi tạo trạm mới ${newId}`, 'success');
+            renderStationsTable();
+        }
+
+        function updateUserRole(id, newRole) {
+            const u = appState.users.find(x => x.id === id);
+            if (u) {
+                u.role = newRole;
+                showToast(`Cập nhật quyền của ${u.name} thành ${newRole}`, 'success');
+                renderUsersTable();
+            }
+        }
+
+        function refreshData() {
+            showToast('Đang đồng bộ dữ liệu thời gian thực...', 'info');
+            renderDashboardOrders();
+            renderApprovalsTable();
+            renderStationsTable();
+            renderUsersTable();
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('-translate-x-full');
+        }
+
+        // TOAST NOTIFICATION LOGIC
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const typeStyles = {
+                success: 'bg-slate-900 text-white border-emerald-500/50',
+                danger: 'bg-slate-900 text-white border-rose-500/50',
+                info: 'bg-slate-900 text-white border-slate-700',
+                warning: 'bg-slate-900 text-white border-amber-500/50'
+            };
+
+            const icons = {
+                success: '<i class="fa-solid fa-circle-check text-emerald-400"></i>',
+                danger: '<i class="fa-solid fa-circle-xmark text-rose-400"></i>',
+                info: '<i class="fa-solid fa-circle-info text-sky-400"></i>',
+                warning: '<i class="fa-solid fa-triangle-exclamation text-amber-400"></i>'
+            };
+
+            toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-2xl border text-xs font-semibold shadow-2xl transition-all duration-300 transform translate-y-4 opacity-0 ${typeStyles[type]}`;
+            toast.innerHTML = `${icons[type]} <span>${message}</span>`;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-4', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // LIVE RADAR CANVAS ANIMATION
+        function initRadarCanvas() {
+            const canvas = document.getElementById('radarCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+
+            function resizeCanvas() {
+                canvas.width = canvas.parentElement.clientWidth;
+                canvas.height = canvas.parentElement.clientHeight;
+            }
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+
+            let angle = 0;
+
+            function animateRadar() {
+                const width = canvas.width;
+                const height = canvas.height;
+                const centerX = width / 2;
+                const centerY = height / 2;
+                const radius = Math.min(centerX, centerY) - 20;
+
+                ctx.fillStyle = '#0f172a';
+                ctx.fillRect(0, 0, width, height);
+
+                // Draw Radar Circles
+                ctx.strokeStyle = 'rgba(16, 185, 129, 0.15)';
+                ctx.lineWidth = 1;
+
+                for (let r = radius / 3; r <= radius; r += radius / 3) {
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, r, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+
+                // Cross lines
+                ctx.beginPath();
+                ctx.moveTo(centerX - radius, centerY);
+                ctx.lineTo(centerX + radius, centerY);
+                ctx.moveTo(centerX, centerY - radius);
+                ctx.lineTo(centerX, centerY + radius);
+                ctx.stroke();
+
+                // Draw Sweep Line
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                ctx.rotate(angle);
+
+                const sweepGradient = ctx.createConicGradient(0, 0, 0);
+                sweepGradient.addColorStop(0, 'rgba(16, 185, 129, 0.3)');
+                sweepGradient.addColorStop(0.1, 'rgba(16, 185, 129, 0.0)');
+                sweepGradient.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
+
+                ctx.fillStyle = sweepGradient;
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.arc(0, 0, radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.strokeStyle = '#10b981';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(radius, 0);
+                ctx.stroke();
+
+                ctx.restore();
+
+                // Draw Drone Blips
+                appState.drones.forEach((d, idx) => {
+                    const dx = centerX + (idx === 0 ? -60 : (idx === 1 ? 80 : -20));
+                    const dy = centerY + (idx === 0 ? -40 : (idx === 1 ? 30 : 70));
+
+                    ctx.fillStyle = '#10b981';
+                    ctx.shadowColor = '#10b981';
+                    ctx.shadowBlur = 10;
+                    ctx.beginPath();
+                    ctx.arc(dx, dy, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+
+                    ctx.fillStyle = '#94a3b8';
+                    ctx.font = '10px "Plus Jakarta Sans"';
+                    ctx.fillText(d.id, dx + 8, dy + 3);
+                });
+
+                angle += 0.02;
+                requestAnimationFrame(animateRadar);
+            }
+
+            animateRadar();
+
+            // Click listener on Radar Canvas to inspect Drone
+            canvas.addEventListener('click', function(e) {
+                const rect = canvas.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                const clickY = e.clientY - rect.top;
+
+                // Select drone based on click position
+                const selected = appState.drones[Math.floor(Math.random() * appState.drones.length)];
+                
+                document.getElementById('telemetry-id').innerText = selected.id;
+                document.getElementById('telemetry-status').innerText = selected.status;
+                document.getElementById('telemetry-battery-txt').innerText = `${selected.battery}%`;
+                document.getElementById('telemetry-battery-bar').style.width = `${selected.battery}%`;
+                document.getElementById('telemetry-speed').innerText = selected.speed;
+                document.getElementById('telemetry-alt').innerText = selected.alt;
+                document.getElementById('telemetry-route').innerText = selected.route;
+
+                showToast(`Đã chọn telemetry của ${selected.id}`, 'info');
+            });
+        }
+
+        // CLOCK WIDGET
+        function startClock() {
+            setInterval(() => {
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString('vi-VN') + ' UTC+7';
+                const el = document.getElementById('live-clock');
+                if (el) el.innerText = timeStr;
+            }, 1000);
+        }
+
+        // INITIALIZATION
+        window.addEventListener('load', () => {
+            renderDashboardOrders();
+            renderApprovalsTable();
+            renderStationsTable();
+            renderUsersTable();
+            initRadarCanvas();
+            startClock();
+        });
+    </script>
 </body>
 </html>
