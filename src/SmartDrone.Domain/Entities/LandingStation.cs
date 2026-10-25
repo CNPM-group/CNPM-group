@@ -7,6 +7,7 @@ public class LandingStation
 {
     public Guid Id { get; set; } = Guid.NewGuid();
     public string Name { get; set; } = string.Empty;
+    public short Capacity { get; set; } = 2;
     public decimal Latitude { get; set; }
     public decimal Longitude { get; set; }
     public StationStatus Status { get; set; } = StationStatus.Available;

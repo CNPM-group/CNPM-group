@@ -11,7 +11,11 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration config)
     {
-        services.AddDbContext<AppDbContext>(o => o.UseNpgsql(config.GetConnectionString("Default")));
+
+        services.AddDbContext<AppDbContext>(o =>
+            o.UseNpgsql(config.GetConnectionString("Default"))
+             .UseSnakeCaseNamingConvention());
+
         services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
 
         services.AddIdentityCore<AppUser>(o =>
