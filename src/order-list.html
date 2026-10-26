@@ -1,353 +1,174 @@
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Danh sách đơn hàng - SmartDroneDelivery</title>
+  <title>Đơn hàng của tôi - SmartDroneDelivery</title>
   <style>
     * { box-sizing: border-box; }
-
     body {
       margin: 0;
-      padding: 28px 16px;
+      padding: 24px 16px;
       font-family: Arial, sans-serif;
-      color: #243047;
-      background: #f4f7fb;
+      background: #f3f6fa;
+      color: #243247;
     }
-
-    .container { max-width: 1100px; margin: auto; }
-
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-bottom: 22px;
+    .container {
+      max-width: 900px;
+      margin: auto;
     }
-
-    h1 { margin: 0 0 8px; }
-    .muted { color: #64748b; }
-
+    h1 { color: #1769aa; }
     .card {
       background: white;
-      border: 1px solid #e2e8f0;
-      border-radius: 12px;
       padding: 20px;
-      margin-bottom: 20px;
+      margin: 16px 0;
+      border-radius: 12px;
+      box-shadow: 0 3px 12px #0000000d;
     }
-
-    .filters {
-      display: grid;
-      grid-template-columns: 2fr 1fr;
-      gap: 14px;
-    }
-
-    input, select {
-      width: 100%;
-      padding: 12px;
+    input, button {
+      padding: 10px 12px;
       border: 1px solid #cbd5e1;
       border-radius: 7px;
       font-size: 14px;
-      background: white;
     }
-
+    input { width: 100%; margin-bottom: 10px; }
     button {
-      border: 0;
-      border-radius: 7px;
-      padding: 10px 14px;
-      background: #2563eb;
+      background: #1769aa;
       color: white;
-      cursor: pointer;
-      font-weight: 600;
-    }
-
-    button:hover { background: #1d4ed8; }
-
-    .table-wrap { overflow-x: auto; }
-
-    table {
-      width: 100%;
-      min-width: 760px;
-      border-collapse: collapse;
-    }
-
-    th, td {
-      padding: 13px 10px;
-      border-bottom: 1px solid #e2e8f0;
-      text-align: left;
-      font-size: 14px;
-    }
-
-    th { background: #f8fafc; }
-
-    .status {
-      display: inline-block;
-      padding: 5px 9px;
-      border-radius: 20px;
-      background: #dbeafe;
-      color: #1d4ed8;
-      white-space: nowrap;
-      font-size: 12px;
-    }
-
-    .delivered {
-      background: #dcfce7;
-      color: #166534;
-    }
-
-    .cancelled {
-      background: #fee2e2;
-      color: #991b1b;
-    }
-
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 14px;
-    }
-
-    .stat-number {
-      font-size: 26px;
-      font-weight: bold;
-      margin-top: 8px;
-    }
-
-    .empty {
-      text-align: center;
-      color: #64748b;
-      padding: 24px;
-    }
-
-    dialog {
-      width: min(460px, calc(100% - 30px));
       border: 0;
-      border-radius: 12px;
-      padding: 24px;
+      cursor: pointer;
     }
-
-    dialog::backdrop { background: #0f172a88; }
-
-    .detail-row {
-      padding: 10px 0;
-      border-bottom: 1px solid #e2e8f0;
+    .order {
+      border: 1px solid #dbe3ed;
+      border-radius: 9px;
+      padding: 14px;
+      margin-top: 12px;
     }
-
-    @media (max-width: 650px) {
-      .filters, .stats { grid-template-columns: 1fr; }
+    .muted { color: #68778b; }
+    .timeline {
+      border-left: 3px solid #1769aa;
+      margin: 16px 0 0 6px;
+      padding-left: 18px;
     }
+    .event { margin-bottom: 16px; }
+    .event strong { display: block; }
+    .error { color: #c62828; }
+    a { color: #1769aa; }
   </style>
 </head>
 <body>
   <main class="container">
-    <div class="header">
-      <div>
-        <h1>Danh sách đơn hàng</h1>
-        <div class="muted">SmartDroneDelivery · Quản lý giao hàng</div>
-      </div>
-      <button onclick="location.href='create-order.html'">
-        + Tạo đơn mới
-      </button>
-    </div>
-
-    <section class="stats">
-      <div class="card">
-        <div class="muted">Tổng đơn hàng</div>
-        <div class="stat-number" id="total">0</div>
-      </div>
-      <div class="card">
-        <div class="muted">Chờ xử lý</div>
-        <div class="stat-number" id="pending">0</div>
-      </div>
-      <div class="card">
-        <div class="muted">Đã giao</div>
-        <div class="stat-number" id="delivered">0</div>
-      </div>
-    </section>
+    <h1>Đơn hàng của tôi</h1>
+    <p class="muted">Theo dõi đơn hàng và lịch sử trạng thái giao hàng.</p>
 
     <section class="card">
-      <h2>Tìm kiếm đơn hàng</h2>
-      <div class="filters">
-        <input id="search" type="search"
-          placeholder="Nhập mã đơn hàng...">
-
-        <select id="statusFilter">
-          <option value="">Tất cả trạng thái</option>
-          <option value="Chờ xử lý">Chờ xử lý</option>
-          <option value="Đang giao">Đang giao</option>
-          <option value="Đã giao">Đã giao</option>
-          <option value="Đã hủy">Đã hủy</option>
-        </select>
-      </div>
+      <label for="search">Tìm theo mã đơn hàng</label>
+      <input id="search" placeholder="Ví dụ: SDD123456">
+      <button id="searchBtn">Tìm đơn</button>
+      <button id="showAll">Hiện tất cả</button>
+      <div id="orders"></div>
     </section>
 
-    <section class="card">
-      <h2>Đơn hàng</h2>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Mã đơn</th>
-              <th>Trạm đi</th>
-              <th>Trạm đến</th>
-              <th>Cân nặng</th>
-              <th>Trạng thái</th>
-              <th>Thao tác</th>
-            </tr>
-          </thead>
-          <tbody id="orderList"></tbody>
-        </table>
-      </div>
+    <section class="card" id="detail" hidden>
+      <h2>Chi tiết đơn hàng</h2>
+      <div id="detailContent"></div>
     </section>
+
+    <p><a href="create-order.html">+ Tạo đơn giao hàng</a></p>
   </main>
 
-  <dialog id="detailDialog">
-    <h2>Chi tiết đơn hàng</h2>
-    <div id="detailContent"></div>
-    <button style="margin-top:18px"
-      onclick="document.getElementById('detailDialog').close()">
-      Đóng
-    </button>
-  </dialog>
-
   <script>
-    const stations = {
-      ST01: "ST01 - Trạm Trung tâm",
-      ST02: "ST02 - Trạm Khu A",
-      ST03: "ST03 - Trạm Khu B",
-      ST04: "ST04 - Trạm Khu C"
-    };
+    const KEY = "smartDroneDeliveryOrders";
+    const ordersBox = document.getElementById("orders");
+    const detailBox = document.getElementById("detail");
+    const detailContent = document.getElementById("detailContent");
 
-    // Dữ liệu giả minh họa
-    const orders = [
-      {
-        id: "SDD001", from: "ST01", to: "ST02",
-        weight: 2.5, length: 30, width: 20, height: 15,
-        status: "Chờ xử lý"
-      },
-      {
-        id: "SDD002", from: "ST02", to: "ST03",
-        weight: 1.2, length: 20, width: 15, height: 10,
-        status: "Đang giao"
-      },
-      {
-        id: "SDD003", from: "ST03", to: "ST04",
-        weight: 3, length: 35, width: 25, height: 20,
-        status: "Đã giao"
-      },
-      {
-        id: "SDD004", from: "ST01", to: "ST04",
-        weight: 0.8, length: 15, width: 10, height: 8,
-        status: "Đã hủy"
+    function getOrders() {
+      try {
+        const data = JSON.parse(localStorage.getItem(KEY) || "[]");
+        return Array.isArray(data) ? data : [];
+      } catch {
+        return [];
       }
-    ];
-
-    const orderList = document.getElementById("orderList");
-
-    function addCell(row, text) {
-      const cell = document.createElement("td");
-      cell.textContent = text;
-      row.appendChild(cell);
-      return cell;
     }
 
-    function renderOrders() {
-      const keyword = document.getElementById("search")
-        .value.trim().toLowerCase();
+    function safe(value) {
+      const div = document.createElement("div");
+      div.textContent = String(value ?? "");
+      return div.innerHTML;
+    }
 
-      const selectedStatus =
-        document.getElementById("statusFilter").value;
-
-      const filtered = orders.filter(order =>
-        order.id.toLowerCase().includes(keyword) &&
-        (!selectedStatus || order.status === selectedStatus)
-      );
-
-      document.getElementById("total").textContent = orders.length;
-      document.getElementById("pending").textContent =
-        orders.filter(o => o.status === "Chờ xử lý").length;
-      document.getElementById("delivered").textContent =
-        orders.filter(o => o.status === "Đã giao").length;
-
-      orderList.replaceChildren();
-
-      if (filtered.length === 0) {
-        const row = document.createElement("tr");
-        const cell = addCell(row, "Không tìm thấy đơn hàng.");
-        cell.colSpan = 6;
-        cell.className = "empty";
-        orderList.appendChild(row);
+    function renderOrders(list) {
+      detailBox.hidden = true;
+      if (!list.length) {
+        ordersBox.innerHTML =
+          '<p class="muted">Chưa có đơn hàng phù hợp. Hãy tạo đơn trước.</p>';
         return;
       }
 
-      filtered.forEach(order => {
-        const row = document.createElement("tr");
+      ordersBox.innerHTML = list.map(order => `
+        <article class="order">
+          <strong>Mã đơn: ${safe(order.id)}</strong>
+          <p>Trạm gửi: ${safe(order.from)}</p>
+          <p>Trạm nhận: ${safe(order.to)}</p>
+          <p>Trạng thái: ${safe(order.status || "Chờ xử lý")}</p>
+          <button data-id="${safe(order.id)}">Xem chi tiết</button>
+        </article>
+      `).join("");
 
-        addCell(row, order.id);
-        addCell(row, stations[order.from]);
-        addCell(row, stations[order.to]);
-        addCell(row, order.weight + " kg");
-
-        const statusCell = document.createElement("td");
-        const badge = document.createElement("span");
-        badge.className = "status";
-
-        if (order.status === "Đã giao") {
-          badge.classList.add("delivered");
-        } else if (order.status === "Đã hủy") {
-          badge.classList.add("cancelled");
-        }
-
-        badge.textContent = order.status;
-        statusCell.appendChild(badge);
-        row.appendChild(statusCell);
-
-        const actionCell = document.createElement("td");
-        const detailButton = document.createElement("button");
-        detailButton.textContent = "Chi tiết";
-        detailButton.addEventListener("click", () => showDetail(order));
-        actionCell.appendChild(detailButton);
-        row.appendChild(actionCell);
-
-        orderList.appendChild(row);
+      ordersBox.querySelectorAll("button[data-id]").forEach(button => {
+        button.addEventListener("click", () => {
+          const order = getOrders().find(item => item.id === button.dataset.id);
+          if (order) showDetail(order);
+        });
       });
     }
 
     function showDetail(order) {
-      const content = document.getElementById("detailContent");
-      content.replaceChildren();
-
-      const details = [
-        ["Mã đơn", order.id],
-        ["Trạm đi", stations[order.from]],
-        ["Trạm đến", stations[order.to]],
-        ["Cân nặng", order.weight + " kg"],
-        ["Kích thước", `${order.length} × ${order.width} × ${order.height} cm`],
-        ["Trạng thái", order.status]
+      detailBox.hidden = false;
+      const history = Array.isArray(order.history) ? order.history : [
+        {
+          status: order.status || "Chờ xử lý",
+          time: order.createdAt || "Chưa có thời gian",
+          note: "Đơn hàng được tạo"
+        }
       ];
 
-      details.forEach(([label, value]) => {
-        const item = document.createElement("div");
-        item.className = "detail-row";
-
-        const strong = document.createElement("strong");
-        strong.textContent = label + ": ";
-
-        item.append(strong, document.createTextNode(value));
-        content.appendChild(item);
-      });
-
-      document.getElementById("detailDialog").showModal();
+      detailContent.innerHTML = `
+        <p><strong>Mã đơn:</strong> ${safe(order.id)}</p>
+        <p><strong>Trạm gửi:</strong> ${safe(order.from)}</p>
+        <p><strong>Trạm nhận:</strong> ${safe(order.to)}</p>
+        <p><strong>Cân nặng:</strong> ${safe(order.weight)} kg</p>
+        <p><strong>Kích thước (D × R × C):</strong>
+          ${safe(order.length)} × ${safe(order.width)} × ${safe(order.height)} cm</p>
+        <p><strong>Trạng thái hiện tại:</strong> ${safe(order.status || "Chờ xử lý")}</p>
+        <h3>Dòng thời gian trạng thái</h3>
+        <div class="timeline">
+          ${history.map(item => `
+            <div class="event">
+              <strong>${safe(item.status)}</strong>
+              <span>${safe(item.time)}</span>
+              <p>${safe(item.note || "")}</p>
+            </div>
+          `).join("")}
+        </div>
+      `;
     }
 
-    document.getElementById("search")
-      .addEventListener("input", renderOrders);
+    document.getElementById("searchBtn").addEventListener("click", () => {
+      const query = document.getElementById("search").value.trim().toLowerCase();
+      renderOrders(getOrders().filter(order =>
+        String(order.id).toLowerCase().includes(query)
+      ));
+    });
 
-    document.getElementById("statusFilter")
-      .addEventListener("change", renderOrders);
+    document.getElementById("showAll").addEventListener("click", () => {
+      document.getElementById("search").value = "";
+      renderOrders(getOrders());
+    });
 
-    renderOrders();
+    renderOrders(getOrders());
   </script>
 </body>
 </html>
+
