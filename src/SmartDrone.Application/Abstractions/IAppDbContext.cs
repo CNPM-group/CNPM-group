@@ -3,8 +3,6 @@ using SmartDrone.Domain.Entities;
 
 namespace SmartDrone.Application.Abstractions;
 
-/// <summary>
-—</summary>
 public interface IAppDbContext
 {
     DbSet<LandingStation> Stations { get; }
