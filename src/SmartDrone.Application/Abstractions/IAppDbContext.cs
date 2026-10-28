@@ -8,6 +8,7 @@ public interface IAppDbContext
     DbSet<LandingStation> Stations { get; }
     DbSet<DeliveryOrder> DeliveryOrders { get; }
     DbSet<Package> Packages { get; }
+    DbSet<CustomerAddress> CustomerAddresses { get; }
 
     Task<int> SaveChangesAsync(
         CancellationToken cancellationToken = default);
