@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -63,7 +62,7 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      min-width: 650px;
+      min-width: 800px;
     }
     th, td {
       text-align: left;
@@ -79,9 +78,13 @@
       padding: 5px 9px;
       font-size: 12px;
     }
-    .empty { padding: 24px; text-align: center; color: #68778b; }
+    .empty {
+      padding: 24px;
+      text-align: center;
+      color: #68778b;
+    }
     .nav { margin-top: 20px; }
-    .nav a { color: #1769aa; }
+    .nav a { color: #1769aa; margin-right: 12px; }
     dialog {
       border: none;
       border-radius: 12px;
@@ -125,6 +128,7 @@
             <th>Mã đơn</th>
             <th>Trạm gửi</th>
             <th>Trạm nhận</th>
+            <th>Địa chỉ giao hàng</th>
             <th>Cân nặng</th>
             <th>Trạng thái</th>
             <th>Chi tiết</th>
@@ -134,10 +138,13 @@
       </table>
     </div>
 
-    <div id="empty" class="empty" hidden>Chưa có đơn hàng phù hợp.</div>
+    <div id="empty" class="empty" hidden>
+      Chưa có đơn hàng phù hợp.
+    </div>
 
     <div class="nav">
       <a href="create-order.html">+ Tạo đơn hàng mới</a>
+      <a href="address-management.html">Quản lý địa chỉ</a>
     </div>
   </main>
 
@@ -149,6 +156,8 @@
 
   <script>
     const STORAGE_KEY = "smartDroneDeliveryOrders";
+    const ADDRESS_KEY = "smartDroneDeliveryAddresses";
+
     const search = document.getElementById("search");
     const filter = document.getElementById("filter");
     const rows = document.getElementById("orderRows");
@@ -156,11 +165,37 @@
 
     function getOrders() {
       try {
-        const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+        const data = JSON.parse(
+          localStorage.getItem(STORAGE_KEY) || "[]"
+        );
         return Array.isArray(data) ? data : [];
       } catch {
         return [];
       }
+    }
+
+    function getAddresses() {
+      try {
+        const data = JSON.parse(
+          localStorage.getItem(ADDRESS_KEY) || "[]"
+        );
+        return Array.isArray(data) ? data : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function getAddressText(order) {
+      const addresses = getAddresses();
+      const address = addresses.find(
+        item => String(item.id) === String(order.deliveryAddressId)
+      );
+
+      if (address) {
+        return `${address.recipient || ""} - ${address.address || ""}`;
+      }
+
+      return order.deliveryAddress || "Chưa có địa chỉ";
     }
 
     function renderOrders() {
@@ -183,10 +218,12 @@
 
       filtered.forEach(order => {
         const tr = document.createElement("tr");
+
         const values = [
           order.id || "",
           order.from || "",
           order.to || "",
+          getAddressText(order),
           (order.weight ?? "") + " kg"
         ];
 
@@ -225,9 +262,13 @@
         ["Mã đơn", order.id],
         ["Trạm gửi", order.from],
         ["Trạm nhận", order.to],
-        ["Cân nặng", order.weight + " kg"],
-        ["Kích thước", `${order.length} × ${order.width} × ${order.height} cm`],
-        ["Trạng thái", order.status],
+        ["Địa chỉ giao hàng", getAddressText(order)],
+        ["Cân nặng", (order.weight ?? "") + " kg"],
+        [
+          "Kích thước",
+          `${order.length ?? ""} × ${order.width ?? ""} × ${order.height ?? ""} cm`
+        ],
+        ["Trạng thái", order.status || "Chờ xử lý"],
         ["Ngày tạo", order.createdAt || "Chưa có"]
       ];
 
@@ -235,7 +276,7 @@
         const p = document.createElement("p");
         const strong = document.createElement("strong");
         strong.textContent = label + ": ";
-        p.append(strong, document.createTextNode(value ?? ""));
+        p.append(strong, document.createTextNode(String(value ?? "")));
         content.appendChild(p);
       });
 
@@ -244,7 +285,10 @@
 
     search.addEventListener("input", renderOrders);
     filter.addEventListener("change", renderOrders);
-    document.getElementById("refresh").addEventListener("click", renderOrders);
+    document.getElementById("refresh").addEventListener(
+      "click", renderOrders
+    );
+
     document.getElementById("closeDialog").addEventListener("click", () => {
       document.getElementById("detailDialog").close();
     });
