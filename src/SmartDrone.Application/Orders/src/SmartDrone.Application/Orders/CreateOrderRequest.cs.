@@ -1,0 +1,7 @@
+namespace SmartDrone.Application.Orders;
+
+public sealed record CreateOrderRequest(
+    Guid PackageId,
+    Guid OriginStationId,
+    Guid DestinationStationId
+);
