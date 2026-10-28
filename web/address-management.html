@@ -1,0 +1,208 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quản lý địa chỉ - SmartDroneDelivery</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 24px 16px;
+      font-family: Arial, sans-serif;
+      background: #f3f6fa;
+      color: #243247;
+    }
+    main {
+      max-width: 850px;
+      margin: auto;
+      padding: 24px;
+      background: white;
+      border-radius: 14px;
+      box-shadow: 0 4px 18px #0000000d;
+    }
+    h1 { color: #1769aa; margin-top: 0; }
+    p { color: #68778b; }
+    label {
+      display: block;
+      margin: 14px 0 6px;
+      font-weight: bold;
+    }
+    input {
+      width: 100%;
+      padding: 11px;
+      border: 1px solid #cbd5e1;
+      border-radius: 7px;
+      font-size: 15px;
+    }
+    button {
+      margin: 14px 8px 0 0;
+      padding: 10px 16px;
+      border: 0;
+      border-radius: 7px;
+      background: #1769aa;
+      color: white;
+      cursor: pointer;
+    }
+    .delete { background: #c62828; }
+    .address {
+      margin-top: 16px;
+      padding: 16px;
+      border: 1px solid #dbe3ed;
+      border-radius: 9px;
+      overflow-wrap: anywhere;
+    }
+    .empty { margin-top: 20px; }
+    a { color: #1769aa; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Quản lý địa chỉ giao hàng</h1>
+  <p>SmartDroneDelivery — Quản lý thông tin người nhận và địa chỉ.</p>
+
+  <form id="addressForm">
+    <input type="hidden" id="editId">
+
+    <label for="recipient">Tên người nhận</label>
+    <input id="recipient" maxlength="100" required>
+
+    <label for="phone">Số điện thoại</label>
+    <input id="phone" type="tel" maxlength="20" required>
+
+    <label for="address">Địa chỉ giao hàng</label>
+    <input id="address" maxlength="300"
+           placeholder="Số nhà, đường, phường/xã, tỉnh/thành" required>
+
+    <label for="note">Ghi chú (không bắt buộc)</label>
+    <input id="note" maxlength="300" placeholder="Ví dụ: Gọi trước khi giao">
+
+    <button type="submit" id="saveButton">Thêm địa chỉ</button>
+    <button type="button" id="cancelButton" hidden>Hủy sửa</button>
+  </form>
+
+  <h2>Danh sách địa chỉ</h2>
+  <div id="addressList"></div>
+
+  <p><a href="create-order.html">Quay lại tạo đơn hàng</a></p>
+</main>
+
+<script>
+  const KEY = "smartDroneDeliveryAddresses";
+  const form = document.getElementById("addressForm");
+  const list = document.getElementById("addressList");
+  const editId = document.getElementById("editId");
+  const saveButton = document.getElementById("saveButton");
+  const cancelButton = document.getElementById("cancelButton");
+
+  function getAddresses() {
+    try {
+      const data = JSON.parse(localStorage.getItem(KEY) || "[]");
+      return Array.isArray(data) ? data : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function showAddresses() {
+    list.replaceChildren();
+    const addresses = getAddresses();
+
+    if (addresses.length === 0) {
+      const empty = document.createElement("p");
+      empty.className = "empty";
+      empty.textContent = "Chưa có địa chỉ nào. Hãy thêm địa chỉ mới.";
+      list.appendChild(empty);
+      return;
+    }
+
+    addresses.forEach(item => {
+      const card = document.createElement("section");
+      card.className = "address";
+
+      const title = document.createElement("h3");
+      title.textContent = item.recipient;
+      card.appendChild(title);
+
+      [ "Số điện thoại: " + item.phone,
+        "Địa chỉ: " + item.address,
+        item.note ? "Ghi chú: " + item.note : ""
+      ].filter(Boolean).forEach(value => {
+        const p = document.createElement("p");
+        p.textContent = value;
+        card.appendChild(p);
+      });
+
+      const edit = document.createElement("button");
+      edit.textContent = "Sửa";
+      edit.addEventListener("click", () => {
+        editId.value = item.id;
+        document.getElementById("recipient").value = item.recipient;
+        document.getElementById("phone").value = item.phone;
+        document.getElementById("address").value = item.address;
+        document.getElementById("note").value = item.note || "";
+        saveButton.textContent = "Lưu thay đổi";
+        cancelButton.hidden = false;
+        form.scrollIntoView({ behavior: "smooth" });
+      });
+
+      const remove = document.createElement("button");
+      remove.textContent = "Xóa";
+      remove.className = "delete";
+      remove.addEventListener("click", () => {
+        if (!confirm("Bạn có chắc muốn xóa địa chỉ này?")) return;
+        localStorage.setItem(KEY, JSON.stringify(
+          getAddresses().filter(address => address.id !== item.id)
+        ));
+        if (editId.value === item.id) resetForm();
+        showAddresses();
+      });
+
+      card.append(edit, remove);
+      list.appendChild(card);
+    });
+  }
+
+  function resetForm() {
+    form.reset();
+    editId.value = "";
+    saveButton.textContent = "Thêm địa chỉ";
+    cancelButton.hidden = true;
+  }
+
+  form.addEventListener("submit", event => {
+    event.preventDefault();
+
+    const recipient = document.getElementById("recipient").value.trim();
+    const phone = document.getElementById("phone").value.trim();
+    const address = document.getElementById("address").value.trim();
+    const note = document.getElementById("note").value.trim();
+
+    if (!recipient || !phone || !address) return;
+
+    const addresses = getAddresses();
+    const id = editId.value;
+
+    if (id) {
+      const index = addresses.findIndex(item => item.id === id);
+      if (index !== -1) {
+        addresses[index] = { ...addresses[index], recipient, phone, address, note };
+      }
+    } else {
+      addresses.unshift({
+        id: "ADR" + Date.now(),
+        recipient, phone, address, note
+      });
+    }
+
+    localStorage.setItem(KEY, JSON.stringify(addresses));
+    resetForm();
+    showAddresses();
+  });
+
+  cancelButton.addEventListener("click", resetForm);
+  showAddresses();
+</script>
+</body>
+</html>
