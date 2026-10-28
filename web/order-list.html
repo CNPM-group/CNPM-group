@@ -253,7 +253,24 @@
 
       empty.hidden = filtered.length > 0;
     }
+     
+function updateOrderStatus(orderId, newStatus) {
+  const orders = getOrders();
+  const index = orders.findIndex(
+    order => order.id === orderId
+  );
 
+  if (index === -1) return;
+
+  orders[index].status = newStatus;
+
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify(orders)
+  );
+
+  renderOrders();
+}
     function showDetails(order) {
       const content = document.getElementById("detailContent");
       content.replaceChildren();
