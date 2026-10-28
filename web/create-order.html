@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -87,6 +86,12 @@
         <option value="ST04">ST04 - Trạm khu Nam</option>
       </select>
 
+      <!-- Chọn địa chỉ giao hàng đã lưu -->
+      <label for="deliveryAddress">Địa chỉ giao hàng</label>
+      <select id="deliveryAddress" required>
+        <option value="">-- Chọn địa chỉ giao hàng --</option>
+      </select>
+
       <div class="grid">
         <div>
           <label for="weight">Cân nặng (kg)</label>
@@ -115,30 +120,78 @@
     </form>
 
     <div class="nav">
-  <a href="address-management.html">Quản lý địa chỉ giao hàng</a>
-  |
-  <a href="order-list.html">Xem danh sách đơn hàng</a>
-</div>
+      <a href="address-management.html">Quản lý địa chỉ giao hàng</a>
+      |
+      <a href="order-list.html">Xem danh sách đơn hàng</a>
+    </div>
   </main>
 
   <script>
     const STORAGE_KEY = "smartDroneDeliveryOrders";
+    const ADDRESS_KEY = "smartDroneDeliveryAddresses";
+
     const form = document.getElementById("orderForm");
     const message = document.getElementById("message");
+    const deliveryAddressSelect =
+      document.getElementById("deliveryAddress");
+
+    // Tải danh sách địa chỉ đã lưu
+    function loadDeliveryAddresses() {
+      let addresses = [];
+
+      try {
+        addresses = JSON.parse(
+          localStorage.getItem(ADDRESS_KEY) || "[]"
+        );
+
+        if (!Array.isArray(addresses)) addresses = [];
+      } catch {
+        addresses = [];
+      }
+
+      addresses.forEach(address => {
+        const option = document.createElement("option");
+        option.value = address.id;
+        option.textContent =
+          `${address.recipient} - ${address.address}`;
+
+        deliveryAddressSelect.appendChild(option);
+      });
+    }
+
+    loadDeliveryAddresses();
 
     form.addEventListener("submit", function(event) {
       event.preventDefault();
 
       const from = document.getElementById("from").value;
       const to = document.getElementById("to").value;
-      const weight = Number(document.getElementById("weight").value);
-      const length = Number(document.getElementById("length").value);
-      const width = Number(document.getElementById("width").value);
-      const height = Number(document.getElementById("height").value);
+      const deliveryAddressId = deliveryAddressSelect.value;
+
+      const weight = Number(
+        document.getElementById("weight").value
+      );
+      const length = Number(
+        document.getElementById("length").value
+      );
+      const width = Number(
+        document.getElementById("width").value
+      );
+      const height = Number(
+        document.getElementById("height").value
+      );
 
       if (from === to) {
         message.className = "message error";
-        message.textContent = "Trạm gửi và trạm nhận phải khác nhau.";
+        message.textContent =
+          "Trạm gửi và trạm nhận phải khác nhau.";
+        return;
+      }
+
+      if (!deliveryAddressId) {
+        message.className = "message error";
+        message.textContent =
+          "Vui lòng chọn địa chỉ giao hàng.";
         return;
       }
 
@@ -149,13 +202,18 @@
         !Number.isFinite(height) || height < 0.1 || height > 100
       ) {
         message.className = "message error";
-        message.textContent = "Vui lòng kiểm tra cân nặng và kích thước kiện hàng.";
+        message.textContent =
+          "Vui lòng kiểm tra cân nặng và kích thước kiện hàng.";
         return;
       }
 
       let orders;
+
       try {
-        orders = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+        orders = JSON.parse(
+          localStorage.getItem(STORAGE_KEY) || "[]"
+        );
+
         if (!Array.isArray(orders)) orders = [];
       } catch {
         orders = [];
@@ -165,6 +223,7 @@
         id: "SDD" + Date.now(),
         from,
         to,
+        deliveryAddressId,
         weight,
         length,
         width,
@@ -174,10 +233,16 @@
       };
 
       orders.unshift(order);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
+
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(orders)
+      );
 
       message.className = "message success";
-      message.textContent = "Tạo đơn thành công! Mã đơn: " + order.id;
+      message.textContent =
+        "Tạo đơn thành công! Mã đơn: " + order.id;
+
       form.reset();
     });
   </script>
