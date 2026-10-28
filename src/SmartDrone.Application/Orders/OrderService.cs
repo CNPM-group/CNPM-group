@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using SmartDrone.Application.Abstractions;
 using SmartDrone.Domain.Entities;
+using SmartDrone.Domain.Enums;
 
 namespace SmartDrone.Application.Orders;
 
@@ -52,7 +53,7 @@ public sealed class OrderService(IAppDbContext db) : IOrderService
             PackageId = package.Id,
             OriginStationId = request.OriginStationId,
             DestinationStationId = request.DestinationStationId,
-            Status = "Pending",
+            Status = OrderStatus.Pending.ToString(),
             Notes = request.Notes,
             CreatedAtUtc = now,
             UpdatedAtUtc = now
