@@ -296,6 +296,34 @@ function updateOrderStatus(orderId, newStatus) {
         p.append(strong, document.createTextNode(String(value ?? "")));
         content.appendChild(p);
       });
+      
+const statusLabel = document.createElement("label");
+statusLabel.textContent = "Cập nhật trạng thái: ";
+statusLabel.htmlFor = "newOrderStatus";
+
+const statusSelect = document.createElement("select");
+statusSelect.id = "newOrderStatus";
+
+["Chờ xử lý", "Đang giao", "Đã giao"].forEach(status => {
+  const option = document.createElement("option");
+  option.value = status;
+  option.textContent = status;
+  statusSelect.appendChild(option);
+});
+
+statusSelect.value = order.status || "Chờ xử lý";
+
+const saveButton = document.createElement("button");
+saveButton.type = "button";
+saveButton.textContent = "Lưu trạng thái";
+
+saveButton.addEventListener("click", () => {
+  updateOrderStatus(order.id, statusSelect.value);
+  document.getElementById("detailDialog").close();
+});
+
+content.append(statusLabel, statusSelect, saveButton);
+
 
       document.getElementById("detailDialog").showModal();
     }
