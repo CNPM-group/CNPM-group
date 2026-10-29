@@ -1,649 +1,672 @@
-import React, { useState, useMemo } from 'react';
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SOLTERA - SmartDrone Fleet Management</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- React & ReactDOM CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <!-- Babel Standalone CDN -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-[#f4f6f4]">
+  <div id="root"></div>
 
-// --- INLINE SVG ICON COMPONENTS FOR RELIABILITY ---
-const Icon = {
-  Grid: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>,
-  ClipboardCheck: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>,
-  Zap: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>,
-  Users: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>,
-  Search: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>,
-  Filter: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"/></svg>,
-  Check: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"/></svg>,
-  X: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"/></svg>,
-  MapPin: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>,
-  Battery: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>,
-  Bell: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>,
-  Shield: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>,
-  ChevronRight: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/></svg>,
-  ArrowUpRight: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>,
-  Refresh: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-};
+  <script type="text/babel">
+    const { useState, useMemo } = React;
 
-export default function App() {
-  // Navigation State (KAN-20)
-  const [activeTab, setActiveTab] = useState('dashboard');
+    // --- INLINE SVG ICON COMPONENTS FOR RELIABILITY ---
+    const Icon = {
+      Grid: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>,
+      ClipboardCheck: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>,
+      Zap: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>,
+      Users: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>,
+      Search: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>,
+      Filter: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"/></svg>,
+      Check: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"/></svg>,
+      X: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"/></svg>,
+      MapPin: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>,
+      Battery: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>,
+      Bell: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>,
+      Shield: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>,
+      ChevronRight: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/></svg>,
+      ArrowUpRight: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>,
+      Refresh: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+    };
 
-  // Search & Filtering State (KAN-21)
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ALL');
+    function App() {
+      // Navigation State (KAN-20)
+      const [activeTab, setActiveTab] = useState('dashboard');
 
-  // Toast Notification State
-  const [toast, setToast] = useState(null);
+      // Search & Filtering State (KAN-21)
+      const [searchQuery, setSearchQuery] = useState('');
+      const [statusFilter, setStatusFilter] = useState('ALL');
 
-  const showToast = (message, type = 'success') => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3500);
-  };
+      // Toast Notification State
+      const [toast, setToast] = useState(null);
 
-  // Order Approval Modal State (KAN-22)
-  const [modal, setModal] = useState({ isOpen: false, orderId: null, type: null, reason: '' });
+      const showToast = (message, type = 'success') => {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 3500);
+      };
 
-  // Initial Mock Data (Jira Tasks Requirements)
-  const [orders, setOrders] = useState([
-    { id: "ORD-9081", customer: "Nguyễn Văn A", address: "Khu A - Smart Campus, Q.9", weight: "1.2 kg", payload: "Mẫu sinh học Y tế", status: "PENDING", time: "10 phút trước", eta: "12 phút" },
-    { id: "ORD-9082", customer: "Trần Thị B", address: "Trạm Landing Pad #3, Thủ Đức", weight: "2.5 kg", payload: "Linh kiện vi mạch", status: "PENDING", time: "15 phút trước", eta: "18 phút" },
-    { id: "ORD-9083", customer: "Lê Văn C", address: "Khu C - KTX Sinh Viên", weight: "0.8 kg", payload: "Thực phẩm gấp", status: "PENDING", time: "22 phút trước", eta: "10 phút" },
-    { id: "ORD-9079", customer: "Phạm Minh D", address: "Tòa nhà Innovation #1", weight: "1.5 kg", payload: "Tài liệu bảo mật", status: "DELIVERING", time: "30 phút trước", eta: "5 phút" },
-    { id: "ORD-9078", customer: "Đặng Hoàng G", address: "Trung tâm Y Tế Dự Phòng", weight: "0.5 kg", payload: "Vắc-xin khẩn cấp", status: "DELIVERING", time: "42 phút trước", eta: "2 phút" },
-    { id: "ORD-9075", customer: "Hoàng Anh E", address: "Cổng Trung Tâm BD", weight: "3.0 kg", payload: "Thiết bị đo đạc", status: "COMPLETED", time: "1 giờ trước", eta: "Đã giao" },
-    { id: "ORD-9070", customer: "Vũ Quốc H", address: "Trạm Năng Lượng Nam Hòa", weight: "1.1 kg", payload: "Cảm biến IoT", status: "REJECTED", time: "3 giờ trước", eta: "Đã hủy" }
-  ]);
+      // Order Approval Modal State (KAN-22)
+      const [modal, setModal] = useState({ isOpen: false, orderId: null, type: null, reason: '' });
 
-  const [stations, setStations] = useState([
-    { id: "ST-01", name: "Trạm Soltera Alpha", location: "10.7626, 106.6820", battery: 98, status: "ACTIVE", dronesCount: 4, capacity: "4/5" },
-    { id: "ST-02", name: "Trạm Sạc Beta Hub", location: "10.7650, 106.6855", battery: 45, status: "CHARGING", dronesCount: 2, capacity: "2/5" },
-    { id: "ST-03", name: "Trạm Landing Gamma", location: "10.7590, 106.6810", battery: 100, status: "ACTIVE", dronesCount: 5, capacity: "5/5" },
-    { id: "ST-04", name: "Trạm Dự Phòng Delta", location: "10.7600, 106.6890", battery: 12, status: "MAINTENANCE", dronesCount: 0, capacity: "0/3" },
-    { id: "ST-05", name: "Trạm Epsilon Park", location: "10.7710, 106.6940", battery: 84, status: "ACTIVE", dronesCount: 3, capacity: "3/5" }
-  ]);
+      // Initial Mock Data (Jira Tasks Requirements)
+      const [orders, setOrders] = useState([
+        { id: "ORD-9081", customer: "Nguyễn Văn A", address: "Khu A - Smart Campus, Q.9", weight: "1.2 kg", payload: "Mẫu sinh học Y tế", status: "PENDING", time: "10 phút trước", eta: "12 phút" },
+        { id: "ORD-9082", customer: "Trần Thị B", address: "Trạm Landing Pad #3, Thủ Đức", weight: "2.5 kg", payload: "Linh kiện vi mạch", status: "PENDING", time: "15 phút trước", eta: "18 phút" },
+        { id: "ORD-9083", customer: "Lê Văn C", address: "Khu C - KTX Sinh Viên", weight: "0.8 kg", payload: "Thực phẩm gấp", status: "PENDING", time: "22 phút trước", eta: "10 phút" },
+        { id: "ORD-9079", customer: "Phạm Minh D", address: "Tòa nhà Innovation #1", weight: "1.5 kg", payload: "Tài liệu bảo mật", status: "DELIVERING", time: "30 phút trước", eta: "5 phút" },
+        { id: "ORD-9078", customer: "Đặng Hoàng G", address: "Trung tâm Y Tế Dự Phòng", weight: "0.5 kg", payload: "Vắc-xin khẩn cấp", status: "DELIVERING", time: "42 phút trước", eta: "2 phút" },
+        { id: "ORD-9075", customer: "Hoàng Anh E", address: "Cổng Trung Tâm BD", weight: "3.0 kg", payload: "Thiết bị đo đạc", status: "COMPLETED", time: "1 giờ trước", eta: "Đã giao" },
+        { id: "ORD-9070", customer: "Vũ Quốc H", address: "Trạm Năng Lượng Nam Hòa", weight: "1.1 kg", payload: "Cảm biến IoT", status: "REJECTED", time: "3 giờ trước", eta: "Đã hủy" }
+      ]);
 
-  const [users, setUsers] = useState([
-    { id: "USR-01", name: "Nguyễn Mậu Huỳnh", email: "huynh.nm@soltera.io", role: "ADMIN", department: "Dispatch Lead", avatar: "MH" },
-    { id: "USR-02", name: "Tiến Nguyễn", email: "tien.ng@soltera.io", role: "OPERATOR", department: "Fleet Control", avatar: "TN" },
-    { id: "USR-03", name: "Lê Nhật Minh", email: "minh.ln@soltera.io", role: "OPERATOR", department: "Safety Supervisor", avatar: "NM" },
-    { id: "USR-04", name: "Khách Hàng Demo", email: "customer@gmail.com", role: "CUSTOMER", department: "VIP Client", avatar: "KD" },
-    { id: "USR-05", name: "Phạm Hoàng Đức", email: "duc.ph@soltera.io", role: "ADMIN", department: "Systems Tech", avatar: "HD" }
-  ]);
+      const [stations, setStations] = useState([
+        { id: "ST-01", name: "Trạm Soltera Alpha", location: "10.7626, 106.6820", battery: 98, status: "ACTIVE", dronesCount: 4, capacity: "4/5" },
+        { id: "ST-02", name: "Trạm Sạc Beta Hub", location: "10.7650, 106.6855", battery: 45, status: "CHARGING", dronesCount: 2, capacity: "2/5" },
+        { id: "ST-03", name: "Trạm Landing Gamma", location: "10.7590, 106.6810", battery: 100, status: "ACTIVE", dronesCount: 5, capacity: "5/5" },
+        { id: "ST-04", name: "Trạm Dự Phòng Delta", location: "10.7600, 106.6890", battery: 12, status: "MAINTENANCE", dronesCount: 0, capacity: "0/3" },
+        { id: "ST-05", name: "Trạm Epsilon Park", location: "10.7710, 106.6940", battery: 84, status: "ACTIVE", dronesCount: 3, capacity: "3/5" }
+      ]);
 
-  // Derived Analytics Data
-  const pendingOrders = useMemo(() => orders.filter(o => o.status === 'PENDING'), [orders]);
-  const deliveringOrders = useMemo(() => orders.filter(o => o.status === 'DELIVERING'), [orders]);
-  const completedOrders = useMemo(() => orders.filter(o => o.status === 'COMPLETED'), [orders]);
+      const [users, setUsers] = useState([
+        { id: "USR-01", name: "Nguyễn Mậu Huỳnh", email: "huynh.nm@soltera.io", role: "ADMIN", department: "Dispatch Lead", avatar: "MH" },
+        { id: "USR-02", name: "Tiến Nguyễn", email: "tien.ng@soltera.io", role: "OPERATOR", department: "Fleet Control", avatar: "TN" },
+        { id: "USR-03", name: "Lê Nhật Minh", email: "minh.ln@soltera.io", role: "OPERATOR", department: "Safety Supervisor", avatar: "NM" },
+        { id: "USR-04", name: "Khách Hàng Demo", email: "customer@gmail.com", role: "CUSTOMER", department: "VIP Client", avatar: "KD" },
+        { id: "USR-05", name: "Phạm Hoàng Đức", email: "duc.ph@soltera.io", role: "ADMIN", department: "Systems Tech", avatar: "HD" }
+      ]);
 
-  // Filtered Orders Logic
-  const filteredOrders = useMemo(() => {
-    return orders.filter(o => {
-      const matchSearch = o.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          o.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          o.address.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchFilter = statusFilter === 'ALL' || o.status === statusFilter;
-      return matchSearch && matchFilter;
-    });
-  }, [orders, searchQuery, statusFilter]);
+      // Derived Analytics Data
+      const pendingOrders = useMemo(() => orders.filter(o => o.status === 'PENDING'), [orders]);
+      const deliveringOrders = useMemo(() => orders.filter(o => o.status === 'DELIVERING'), [orders]);
+      const completedOrders = useMemo(() => orders.filter(o => o.status === 'COMPLETED'), [orders]);
 
-  // Actions (KAN-22)
-  const handleConfirmApproval = () => {
-    if (!modal.orderId) return;
-    
-    if (modal.type === 'APPROVE') {
-      setOrders(prev => prev.map(o => o.id === modal.orderId ? { ...o, status: 'DELIVERING' } : o));
-      showToast(`Đã duyệt đơn hàng ${modal.orderId}! Drone sẵn sàng xuất kích.`, 'success');
-    } else if (modal.type === 'REJECT') {
-      setOrders(prev => prev.map(o => o.id === modal.orderId ? { ...o, status: 'REJECTED' } : o));
-      showToast(`Đã từ chối đơn hàng ${modal.orderId}. Lý do: ${modal.reason || 'Không có'}`, 'error');
-    }
-    
-    setModal({ isOpen: false, orderId: null, type: null, reason: '' });
-  };
+      // Filtered Orders Logic
+      const filteredOrders = useMemo(() => {
+        return orders.filter(o => {
+          const matchSearch = o.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                              o.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                              o.address.toLowerCase().includes(searchQuery.toLowerCase());
+          const matchFilter = statusFilter === 'ALL' || o.status === statusFilter;
+          return matchSearch && matchFilter;
+        });
+      }, [orders, searchQuery, statusFilter]);
 
-  // Actions (KAN-23)
-  const toggleStationStatus = (id) => {
-    setStations(prev => prev.map(s => {
-      if (s.id !== id) return s;
-      const cycle = { ACTIVE: 'CHARGING', CHARGING: 'MAINTENANCE', MAINTENANCE: 'ACTIVE' };
-      const nextStatus = cycle[s.status];
-      return { ...s, status: nextStatus };
-    }));
-    showToast(`Cập nhật trạng thái trạm ${id} thành công!`, 'info');
-  };
-
-  // Actions (KAN-43)
-  const handleRoleChange = (userId, newRole) => {
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
-    showToast(`Đã cập nhật vai trò người dùng ${userId} sang ${newRole}`, 'success');
-  };
-
-  // UI Status Badges Helper
-  const renderStatusBadge = (status) => {
-    switch (status) {
-      case 'PENDING':
-        return <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200/80"><span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>Chờ duyệt</span>;
-      case 'DELIVERING':
-        return <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200/80"><span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-ping"></span>Đang giao</span>;
-      case 'COMPLETED':
-        return <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Hoàn thành</span>;
-      case 'REJECTED':
-      default:
-        return <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200/80"><span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>Đã hủy</span>;
-    }
-  };
-
-  const renderStationBadge = (status) => {
-    switch (status) {
-      case 'ACTIVE':
-        return <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80"><span className="w-2 h-2 rounded-full bg-emerald-500"></span>Sẵn sàng</span>;
-      case 'CHARGING':
-        return <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200/80"><span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>Đang sạc</span>;
-      case 'MAINTENANCE':
-      default:
-        return <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200/80"><span className="w-2 h-2 rounded-full bg-rose-500"></span>Bảo trì</span>;
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-[#f4f6f4] text-slate-800 font-sans flex flex-col md:flex-row antialiased">
-      
-      {/* TOAST NOTIFICATION BANNER */}
-      {toast && (
-        <div className="fixed top-5 right-5 z-50 animate-bounce">
-          <div className={`flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl text-sm font-semibold border ${
-            toast.type === 'error' ? 'bg-rose-900 text-white border-rose-700' :
-            toast.type === 'info' ? 'bg-slate-900 text-white border-slate-700' :
-            'bg-emerald-900 text-white border-emerald-700'
-          }`}>
-            <Icon.Shield />
-            <span>{toast.message}</span>
-          </div>
-        </div>
-      )}
-
-      {/* SIDEBAR NAVIGATION (KAN-20) */}
-      <aside className="w-full md:w-72 bg-white border-r border-slate-200/80 flex flex-col justify-between p-6 flex-shrink-0">
-        <div>
-          {/* Logo & Brand */}
-          <div className="flex items-center gap-3 px-2 py-3 mb-8">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-lg shadow-emerald-600/25">
-              <Icon.Zap />
-            </div>
-            <div>
-              <h1 className="font-black text-xl tracking-tight text-slate-900">SOLTERA</h1>
-              <p className="text-[11px] font-bold text-emerald-600 tracking-wider uppercase">SmartDrone Fleet</p>
-            </div>
-          </div>
-
-          {/* Navigation Items */}
-          <nav className="space-y-1.5">
-            {[
-              { id: 'dashboard', label: 'Dashboard Overview', badge: null, icon: <Icon.Grid />, jira: 'KAN-21' },
-              { id: 'orders', label: 'Duyệt Đơn Hàng', badge: pendingOrders.length, icon: <Icon.ClipboardCheck />, jira: 'KAN-22' },
-              { id: 'stations', label: 'Quản Lý Trạm Đáp', badge: stations.length, icon: <Icon.Zap />, jira: 'KAN-23' },
-              { id: 'users', label: 'Quản Lý User', badge: null, icon: <Icon.Users />, jira: 'KAN-43' }
-            ].map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl font-bold text-sm transition-all duration-200 ${
-                  activeTab === tab.id
-                    ? 'bg-slate-900 text-white shadow-lg shadow-slate-900/10'
-                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <span className={activeTab === tab.id ? 'text-emerald-400' : 'text-slate-400'}>{tab.icon}</span>
-                  <span>{tab.label}</span>
-                </div>
-                {tab.badge !== null && tab.badge > 0 && (
-                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-black ${
-                    activeTab === tab.id ? 'bg-emerald-500 text-white' : 'bg-emerald-100 text-emerald-800'
-                  }`}>
-                    {tab.badge}
-                  </span>
-                )}
-              </button>
-            ))}
-          </nav>
-        </div>
-
-        {/* User Profile Footer */}
-        <div className="pt-6 mt-6 border-t border-slate-100 flex items-center justify-between px-2">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-100 border border-emerald-300 text-emerald-900 flex items-center justify-center font-black text-sm">
-              MH
-            </div>
-            <div className="overflow-hidden">
-              <p className="text-xs font-extrabold text-slate-900 truncate">Nguyễn Mậu Huỳnh</p>
-              <p className="text-[11px] text-emerald-600 font-bold truncate">Lead Administrator</p>
-            </div>
-          </div>
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-4 ring-emerald-100"></span>
-        </div>
-      </aside>
-
-      {/* MAIN CONTENT AREA */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      // Actions (KAN-22)
+      const handleConfirmApproval = () => {
+        if (!modal.orderId) return;
         
-        {/* HEADER BAR */}
-        <header className="h-20 bg-white/80 backdrop-blur-md border-b border-slate-200/80 px-8 flex items-center justify-between sticky top-0 z-10">
-          <div>
-            <h2 className="text-xl font-black text-slate-900 tracking-tight capitalize">
-              {activeTab === 'dashboard' && 'Dashboard Overview (KAN-21)'}
-              {activeTab === 'orders' && 'Duyệt Đơn Hàng Vận Chuyển (KAN-22)'}
-              {activeTab === 'stations' && 'Quản Lý Trạm Sạc & Đáp Drone (KAN-23)'}
-              {activeTab === 'users' && 'Phân Quyền & Quản Lý User (KAN-43)'}
-            </h2>
-            <p className="text-xs text-slate-400 font-bold mt-0.5">Soltera Control System v2.4 • Portal Live</p>
-          </div>
+        if (modal.type === 'APPROVE') {
+          setOrders(prev => prev.map(o => o.id === modal.orderId ? { ...o, status: 'DELIVERING' } : o));
+          showToast(`Đã duyệt đơn hàng ${modal.orderId}! Drone sẵn sàng xuất kích.`, 'success');
+        } else if (modal.type === 'REJECT') {
+          setOrders(prev => prev.map(o => o.id === modal.orderId ? { ...o, status: 'REJECTED' } : o));
+          showToast(`Đã từ chối đơn hàng ${modal.orderId}. Lý do: ${modal.reason || 'Không có'}`, 'error');
+        }
+        
+        setModal({ isOpen: false, orderId: null, type: null, reason: '' });
+      };
 
-          <div className="flex items-center gap-4">
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              API Backend: Connected (Port 5080)
+      // Actions (KAN-23)
+      const toggleStationStatus = (id) => {
+        setStations(prev => prev.map(s => {
+          if (s.id !== id) return s;
+          const cycle = { ACTIVE: 'CHARGING', CHARGING: 'MAINTENANCE', MAINTENANCE: 'ACTIVE' };
+          const nextStatus = cycle[s.status];
+          return { ...s, status: nextStatus };
+        }));
+        showToast(`Cập nhật trạng thái trạm ${id} thành công!`, 'info');
+      };
+
+      // Actions (KAN-43)
+      const handleRoleChange = (userId, newRole) => {
+        setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
+        showToast(`Đã cập nhật vai trò người dùng ${userId} sang ${newRole}`, 'success');
+      };
+
+      // UI Status Badges Helper
+      const renderStatusBadge = (status) => {
+        switch (status) {
+          case 'PENDING':
+            return <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200/80"><span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>Chờ duyệt</span>;
+          case 'DELIVERING':
+            return <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200/80"><span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-ping"></span>Đang giao</span>;
+          case 'COMPLETED':
+            return <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Hoàn thành</span>;
+          case 'REJECTED':
+          default:
+            return <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200/80"><span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>Đã hủy</span>;
+        }
+      };
+
+      const renderStationBadge = (status) => {
+        switch (status) {
+          case 'ACTIVE':
+            return <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80"><span className="w-2 h-2 rounded-full bg-emerald-500"></span>Sẵn sàng</span>;
+          case 'CHARGING':
+            return <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200/80"><span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>Đang sạc</span>;
+          case 'MAINTENANCE':
+          default:
+            return <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200/80"><span className="w-2 h-2 rounded-full bg-rose-500"></span>Bảo trì</span>;
+        }
+      };
+
+      return (
+        <div className="min-h-screen bg-[#f4f6f4] text-slate-800 font-sans flex flex-col md:flex-row antialiased">
+          
+          {/* TOAST NOTIFICATION BANNER */}
+          {toast && (
+            <div className="fixed top-5 right-5 z-50 animate-bounce">
+              <div className={`flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl text-sm font-semibold border ${
+                toast.type === 'error' ? 'bg-rose-900 text-white border-rose-700' :
+                toast.type === 'info' ? 'bg-slate-900 text-white border-slate-700' :
+                'bg-emerald-900 text-white border-emerald-700'
+              }`}>
+                <Icon.Shield />
+                <span>{toast.message}</span>
+              </div>
             </div>
-            <button className="p-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition relative">
-              <Icon.Bell />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full"></span>
-            </button>
-          </div>
-        </header>
+          )}
 
-        {/* WORKSPACE BODY */}
-        <div className="flex-1 p-6 md:p-8 overflow-y-auto space-y-8">
-
-          {/* TAB 1: DASHBOARD OVERVIEW (KAN-21) */}
-          {activeTab === 'dashboard' && (
-            <div className="space-y-8 animate-fadeIn">
-              
-              {/* Soltera Hero Banner */}
-              <div className="p-8 bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-950 text-white rounded-3xl shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
-                <div className="space-y-2 z-10">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                    <Icon.Zap /> Soltera Air Dispatch Engine
-                  </div>
-                  <h2 className="text-3xl font-black tracking-tight">HỆ THỐNG ĐIỀU HÀNH DRONE TỰ ĐỘNG</h2>
-                  <p className="text-slate-300 text-sm max-w-xl font-medium">Giám sát hành trình, tự động phân luồng đơn hàng và kiểm soát trạm sạc năng lượng thông minh trên toàn mạng lưới.</p>
+          {/* SIDEBAR NAVIGATION (KAN-20) */}
+          <aside className="w-full md:w-72 bg-white border-r border-slate-200/80 flex flex-col justify-between p-6 flex-shrink-0">
+            <div>
+              {/* Logo & Brand */}
+              <div className="flex items-center gap-3 px-2 py-3 mb-8">
+                <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-lg shadow-emerald-600/25">
+                  <Icon.Zap />
                 </div>
-                <div className="flex items-center gap-3 z-10">
-                  <button onClick={() => setActiveTab('orders')} className="px-5 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-sm shadow-lg shadow-emerald-500/20 transition flex items-center gap-2">
-                    Duyệt Đơn Mới ({pendingOrders.length}) <Icon.ChevronRight />
+                <div>
+                  <h1 className="font-black text-xl tracking-tight text-slate-900">SOLTERA</h1>
+                  <p className="text-[11px] font-bold text-emerald-600 tracking-wider uppercase">SmartDrone Fleet</p>
+                </div>
+              </div>
+
+              {/* Navigation Items */}
+              <nav className="space-y-1.5">
+                {[
+                  { id: 'dashboard', label: 'Dashboard Overview', badge: null, icon: <Icon.Grid />, jira: 'KAN-21' },
+                  { id: 'orders', label: 'Duyệt Đơn Hàng', badge: pendingOrders.length, icon: <Icon.ClipboardCheck />, jira: 'KAN-22' },
+                  { id: 'stations', label: 'Quản Lý Trạm Đáp', badge: stations.length, icon: <Icon.Zap />, jira: 'KAN-23' },
+                  { id: 'users', label: 'Quản Lý User', badge: null, icon: <Icon.Users />, jira: 'KAN-43' }
+                ].map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl font-bold text-sm transition-all duration-200 ${
+                      activeTab === tab.id
+                        ? 'bg-slate-900 text-white shadow-lg shadow-slate-900/10'
+                        : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className={activeTab === tab.id ? 'text-emerald-400' : 'text-slate-400'}>{tab.icon}</span>
+                      <span>{tab.label}</span>
+                    </div>
+                    {tab.badge !== null && tab.badge > 0 && (
+                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-black ${
+                        activeTab === tab.id ? 'bg-emerald-500 text-white' : 'bg-emerald-100 text-emerald-800'
+                      }`}>
+                        {tab.badge}
+                      </span>
+                    )}
                   </button>
-                </div>
-                <div className="absolute -right-10 -bottom-10 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
-              </div>
+                ))}
+              </nav>
+            </div>
 
-              {/* KPI Stat Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                <div className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-sm hover:shadow-md transition">
-                  <div className="flex items-center justify-between text-slate-400 mb-3">
-                    <span className="text-xs font-bold uppercase tracking-wider">Đơn Hoàn Thành</span>
-                    <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl"><Icon.Check /></div>
-                  </div>
-                  <h3 className="text-3xl font-black text-slate-900">{completedOrders.length + 1540}</h3>
-                  <p className="text-xs font-bold text-emerald-600 mt-2 flex items-center gap-1">
-                    <Icon.ArrowUpRight /> +12.5% so với tuần trước
-                  </p>
+            {/* User Profile Footer */}
+            <div className="pt-6 mt-6 border-t border-slate-100 flex items-center justify-between px-2">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-100 border border-emerald-300 text-emerald-900 flex items-center justify-center font-black text-sm">
+                  MH
                 </div>
-
-                <div className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-sm hover:shadow-md transition">
-                  <div className="flex items-center justify-between text-slate-400 mb-3">
-                    <span className="text-xs font-bold uppercase tracking-wider">Chờ Xét Duyệt</span>
-                    <div className="p-2 bg-amber-50 text-amber-600 rounded-xl"><Icon.ClipboardCheck /></div>
-                  </div>
-                  <h3 className="text-3xl font-black text-amber-600">{pendingOrders.length}</h3>
-                  <p className="text-xs font-bold text-slate-400 mt-2">Cần dispatcher xử lý ngay</p>
-                </div>
-
-                <div className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-sm hover:shadow-md transition">
-                  <div className="flex items-center justify-between text-slate-400 mb-3">
-                    <span className="text-xs font-bold uppercase tracking-wider">Đang Khai Thác</span>
-                    <div className="p-2 bg-blue-50 text-blue-600 rounded-xl"><Icon.Zap /></div>
-                  </div>
-                  <h3 className="text-3xl font-black text-slate-900">{deliveringOrders.length + 8} <span className="text-sm font-normal text-slate-400">/ 15 Drone</span></h3>
-                  <p className="text-xs font-bold text-blue-600 mt-2">Hiệu suất đội bay 86%</p>
-                </div>
-
-                <div className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-sm hover:shadow-md transition">
-                  <div className="flex items-center justify-between text-slate-400 mb-3">
-                    <span className="text-xs font-bold uppercase tracking-wider">Trạm Hoạt Động</span>
-                    <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl"><Icon.Battery /></div>
-                  </div>
-                  <h3 className="text-3xl font-black text-slate-900">{stations.filter(s => s.status === 'ACTIVE').length} <span className="text-sm font-normal text-slate-400">/ {stations.length}</span></h3>
-                  <p className="text-xs font-bold text-emerald-600 mt-2">1 trạm bảo trì định kỳ</p>
+                <div className="overflow-hidden">
+                  <p className="text-xs font-extrabold text-slate-900 truncate">Nguyễn Mậu Huỳnh</p>
+                  <p className="text-[11px] text-emerald-600 font-bold truncate">Lead Administrator</p>
                 </div>
               </div>
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-4 ring-emerald-100"></span>
+            </div>
+          </aside>
 
-              {/* Order Search and Dynamic Table */}
-              <div className="bg-white border border-slate-200/80 rounded-3xl p-6 space-y-5 shadow-sm">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div>
-                    <h3 className="text-lg font-black text-slate-900">Danh Sách Đơn Hàng Vận Chuyển</h3>
-                    <p className="text-xs text-slate-400 font-bold">Tìm kiếm và lọc theo trạng thái theo thời gian thực</p>
+          {/* MAIN CONTENT AREA */}
+          <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
+            
+            {/* HEADER BAR */}
+            <header className="h-20 bg-white/80 backdrop-blur-md border-b border-slate-200/80 px-8 flex items-center justify-between sticky top-0 z-10">
+              <div>
+                <h2 className="text-xl font-black text-slate-900 tracking-tight capitalize">
+                  {activeTab === 'dashboard' && 'Dashboard Overview (KAN-21)'}
+                  {activeTab === 'orders' && 'Duyệt Đơn Hàng Vận Chuyển (KAN-22)'}
+                  {activeTab === 'stations' && 'Quản Lý Trạm Sạc & Đáp Drone (KAN-23)'}
+                  {activeTab === 'users' && 'Phân Quyền & Quản Lý User (KAN-43)'}
+                </h2>
+                <p className="text-xs text-slate-400 font-bold mt-0.5">Soltera Control System v2.4 • Portal Live</p>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  API Backend: Connected (Port 5080)
+                </div>
+                <button className="p-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition relative">
+                  <Icon.Bell />
+                  <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full"></span>
+                </button>
+              </div>
+            </header>
+
+            {/* WORKSPACE BODY */}
+            <div className="flex-1 p-6 md:p-8 overflow-y-auto space-y-8">
+
+              {/* TAB 1: DASHBOARD OVERVIEW (KAN-21) */}
+              {activeTab === 'dashboard' && (
+                <div className="space-y-8">
+                  
+                  {/* Soltera Hero Banner */}
+                  <div className="p-8 bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-950 text-white rounded-3xl shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
+                    <div className="space-y-2 z-10">
+                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                        <Icon.Zap /> Soltera Air Dispatch Engine
+                      </div>
+                      <h2 className="text-3xl font-black tracking-tight">HỆ THỐNG ĐIỀU HÀNH DRONE TỰ ĐỘNG</h2>
+                      <p className="text-slate-300 text-sm max-w-xl font-medium">Giám sát hành trình, tự động phân luồng đơn hàng và kiểm soát trạm sạc năng lượng thông minh trên toàn mạng lưới.</p>
+                    </div>
+                    <div className="flex items-center gap-3 z-10">
+                      <button onClick={() => setActiveTab('orders')} className="px-5 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-sm shadow-lg shadow-emerald-500/20 transition flex items-center gap-2">
+                        Duyệt Đơn Mới ({pendingOrders.length}) <Icon.ChevronRight />
+                      </button>
+                    </div>
+                    <div className="absolute -right-10 -bottom-10 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
                   </div>
 
-                  {/* Filters */}
-                  <div className="flex flex-wrap items-center gap-3">
-                    <div className="relative">
-                      <span className="absolute inset-y-0 left-3.5 flex items-center text-slate-400 pointer-events-none"><Icon.Search /></span>
-                      <input
-                        type="text"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Tìm mã đơn, tên khách..."
-                        className="bg-slate-50 border border-slate-200 rounded-2xl pl-10 pr-4 py-2.5 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 w-64"
-                      />
+                  {/* KPI Stat Cards */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                    <div className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-sm hover:shadow-md transition">
+                      <div className="flex items-center justify-between text-slate-400 mb-3">
+                        <span className="text-xs font-bold uppercase tracking-wider">Đơn Hoàn Thành</span>
+                        <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl"><Icon.Check /></div>
+                      </div>
+                      <h3 className="text-3xl font-black text-slate-900">{completedOrders.length + 1540}</h3>
+                      <p className="text-xs font-bold text-emerald-600 mt-2 flex items-center gap-1">
+                        <Icon.ArrowUpRight /> +12.5% so với tuần trước
+                      </p>
                     </div>
 
-                    <div className="relative">
-                      <select
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                        className="bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-900 appearance-none pr-8 cursor-pointer"
-                      >
-                        <option value="ALL">Tất cả trạng thái</option>
-                        <option value="PENDING">Chờ duyệt</option>
-                        <option value="DELIVERING">Đang giao</option>
-                        <option value="COMPLETED">Hoàn thành</option>
-                        <option value="REJECTED">Đã hủy</option>
-                      </select>
+                    <div className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-sm hover:shadow-md transition">
+                      <div className="flex items-center justify-between text-slate-400 mb-3">
+                        <span className="text-xs font-bold uppercase tracking-wider">Chờ Xét Duyệt</span>
+                        <div className="p-2 bg-amber-50 text-amber-600 rounded-xl"><Icon.ClipboardCheck /></div>
+                      </div>
+                      <h3 className="text-3xl font-black text-amber-600">{pendingOrders.length}</h3>
+                      <p className="text-xs font-bold text-slate-400 mt-2">Cần dispatcher xử lý ngay</p>
+                    </div>
+
+                    <div className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-sm hover:shadow-md transition">
+                      <div className="flex items-center justify-between text-slate-400 mb-3">
+                        <span className="text-xs font-bold uppercase tracking-wider">Đang Khai Thác</span>
+                        <div className="p-2 bg-blue-50 text-blue-600 rounded-xl"><Icon.Zap /></div>
+                      </div>
+                      <h3 className="text-3xl font-black text-slate-900">{deliveringOrders.length + 8} <span className="text-sm font-normal text-slate-400">/ 15 Drone</span></h3>
+                      <p className="text-xs font-bold text-blue-600 mt-2">Hiệu suất đội bay 86%</p>
+                    </div>
+
+                    <div className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-sm hover:shadow-md transition">
+                      <div className="flex items-center justify-between text-slate-400 mb-3">
+                        <span className="text-xs font-bold uppercase tracking-wider">Trạm Hoạt Động</span>
+                        <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl"><Icon.Battery /></div>
+                      </div>
+                      <h3 className="text-3xl font-black text-slate-900">{stations.filter(s => s.status === 'ACTIVE').length} <span className="text-sm font-normal text-slate-400">/ {stations.length}</span></h3>
+                      <p className="text-xs font-bold text-emerald-600 mt-2">1 trạm bảo trì định kỳ</p>
+                    </div>
+                  </div>
+
+                  {/* Order Search and Dynamic Table */}
+                  <div className="bg-white border border-slate-200/80 rounded-3xl p-6 space-y-5 shadow-sm">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div>
+                        <h3 className="text-lg font-black text-slate-900">Danh Sách Đơn Hàng Vận Chuyển</h3>
+                        <p className="text-xs text-slate-400 font-bold">Tìm kiếm và lọc theo trạng thái theo thời gian thực</p>
+                      </div>
+
+                      {/* Filters */}
+                      <div className="flex flex-wrap items-center gap-3">
+                        <div className="relative">
+                          <span className="absolute inset-y-0 left-3.5 flex items-center text-slate-400 pointer-events-none"><Icon.Search /></span>
+                          <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder="Tìm mã đơn, tên khách..."
+                            className="bg-slate-50 border border-slate-200 rounded-2xl pl-10 pr-4 py-2.5 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 w-64"
+                          />
+                        </div>
+
+                        <div className="relative">
+                          <select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            className="bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-900 appearance-none pr-8 cursor-pointer"
+                          >
+                            <option value="ALL">Tất cả trạng thái</option>
+                            <option value="PENDING">Chờ duyệt</option>
+                            <option value="DELIVERING">Đang giao</option>
+                            <option value="COMPLETED">Hoàn thành</option>
+                            <option value="REJECTED">Đã hủy</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Main Table */}
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="text-xs font-black text-slate-400 uppercase border-b border-slate-100 tracking-wider">
+                            <th className="py-3.5 px-4">Mã Đơn</th>
+                            <th className="py-3.5 px-4">Khách Hàng</th>
+                            <th className="py-3.5 px-4">Địa Chỉ Giao</th>
+                            <th className="py-3.5 px-4">Loại Hàng / Tải Trọng</th>
+                            <th className="py-3.5 px-4">Trạng Thái</th>
+                            <th className="py-3.5 px-4">Dự Kiến</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-sm font-medium text-slate-700">
+                          {filteredOrders.length === 0 ? (
+                            <tr>
+                              <td colSpan="6" className="py-12 text-center text-slate-400 font-bold">Không tìm thấy đơn hàng phù hợp.</td>
+                            </tr>
+                          ) : (
+                            filteredOrders.map(o => (
+                              <tr key={o.id} className="hover:bg-slate-50/80 transition">
+                                <td className="py-4 px-4 font-black text-slate-900">{o.id}</td>
+                                <td className="py-4 px-4 font-bold text-slate-900">{o.customer}</td>
+                                <td className="py-4 px-4 text-slate-500 font-medium max-w-xs truncate">{o.address}</td>
+                                <td className="py-4 px-4">
+                                  <span className="text-slate-900 font-bold">{o.payload}</span>
+                                  <span className="text-slate-400 text-xs block font-medium">{o.weight}</span>
+                                </td>
+                                <td className="py-4 px-4">{renderStatusBadge(o.status)}</td>
+                                <td className="py-4 px-4 text-xs font-bold text-slate-500">{o.eta}</td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                </div>
+              )}
+
+              {/* TAB 2: DUYỆT ĐƠN HÀNG QUEUE (KAN-22) */}
+              {activeTab === 'orders' && (
+                <div className="space-y-6">
+                  <div className="bg-white border border-slate-200/80 rounded-3xl p-6 space-y-5 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-black text-slate-900">Hàng Chờ Xét Duyệt Xuất Kích (KAN-22)</h3>
+                        <p className="text-xs text-slate-400 font-bold">Xác nhận hoặc từ chối các đơn hàng yêu cầu giao bằng Drone</p>
+                      </div>
+                      <span className="px-4 py-1.5 rounded-full text-xs font-black bg-amber-100 text-amber-900">
+                        {pendingOrders.length} đơn cần xử lý
+                      </span>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="text-xs font-black text-slate-400 uppercase border-b border-slate-100 tracking-wider">
+                            <th className="py-3.5 px-4">Mã Đơn</th>
+                            <th className="py-3.5 px-4">Khách Hàng</th>
+                            <th className="py-3.5 px-4">Địa Điểm Thả Hàng</th>
+                            <th className="py-3.5 px-4">Tải Trọng</th>
+                            <th className="py-3.5 px-4">Thời Gian Yêu Cầu</th>
+                            <th className="py-3.5 px-4 text-right">Thao Tác Duyệt</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-sm font-medium text-slate-700">
+                          {pendingOrders.length === 0 ? (
+                            <tr>
+                              <td colSpan="6" className="py-16 text-center text-slate-400 font-bold">
+                                🎉 Hoàn thành! Không còn đơn hàng nào đang chờ xét duyệt.
+                              </td>
+                            </tr>
+                          ) : (
+                            pendingOrders.map(o => (
+                              <tr key={o.id} className="hover:bg-slate-50/80 transition">
+                                <td className="py-4 px-4 font-black text-amber-600">{o.id}</td>
+                                <td className="py-4 px-4 font-bold text-slate-900">{o.customer}</td>
+                                <td className="py-4 px-4 text-slate-600 font-medium">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-slate-400"><Icon.MapPin /></span>
+                                    {o.address}
+                                  </div>
+                                </td>
+                                <td className="py-4 px-4 font-bold text-slate-800">{o.weight} ({o.payload})</td>
+                                <td className="py-4 px-4 text-xs font-bold text-slate-400">{o.time}</td>
+                                <td className="py-4 px-4 text-right space-x-2">
+                                  <button
+                                    onClick={() => setModal({ isOpen: true, orderId: o.id, type: 'APPROVE', reason: '' })}
+                                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl text-xs shadow-md shadow-emerald-600/20 transition inline-flex items-center gap-1"
+                                  >
+                                    <Icon.Check /> Duyệt Đơn
+                                  </button>
+                                  <button
+                                    onClick={() => setModal({ isOpen: true, orderId: o.id, type: 'REJECT', reason: '' })}
+                                    className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-black rounded-xl text-xs transition inline-flex items-center gap-1"
+                                  >
+                                    <Icon.X /> Từ Chối
+                                  </button>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
                 </div>
+              )}
 
-                {/* Main Table */}
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="text-xs font-black text-slate-400 uppercase border-b border-slate-100 tracking-wider">
-                        <th className="py-3.5 px-4">Mã Đơn</th>
-                        <th className="py-3.5 px-4">Khách Hàng</th>
-                        <th className="py-3.5 px-4">Địa Chỉ Giao</th>
-                        <th className="py-3.5 px-4">Loại Hàng / Tải Trọng</th>
-                        <th className="py-3.5 px-4">Trạng Thái</th>
-                        <th className="py-3.5 px-4">Dự Kiến</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 text-sm font-medium text-slate-700">
-                      {filteredOrders.length === 0 ? (
-                        <tr>
-                          <td colSpan="6" className="py-12 text-center text-slate-400 font-bold">Không tìm thấy đơn hàng phù hợp.</td>
-                        </tr>
-                      ) : (
-                        filteredOrders.map(o => (
-                          <tr key={o.id} className="hover:bg-slate-50/80 transition">
-                            <td className="py-4 px-4 font-black text-slate-900">{o.id}</td>
-                            <td className="py-4 px-4 font-bold text-slate-900">{o.customer}</td>
-                            <td className="py-4 px-4 text-slate-500 font-medium max-w-xs truncate">{o.address}</td>
-                            <td className="py-4 px-4">
-                              <span className="text-slate-900 font-bold">{o.payload}</span>
-                              <span className="text-slate-400 text-xs block font-medium">{o.weight}</span>
-                            </td>
-                            <td className="py-4 px-4">{renderStatusBadge(o.status)}</td>
-                            <td className="py-4 px-4 text-xs font-bold text-slate-500">{o.eta}</td>
+              {/* TAB 3: QUẢN LÝ TRẠM (KAN-23) */}
+              {activeTab === 'stations' && (
+                <div className="space-y-6">
+                  <div className="bg-white border border-slate-200/80 rounded-3xl p-6 space-y-5 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-black text-slate-900">Quản Lý Trạm Đáp & Sạc Pin (KAN-23)</h3>
+                        <p className="text-xs text-slate-400 font-bold">Theo dõi tọa độ GPS, mức pin trạm và trạng thái vận hành</p>
+                      </div>
+                      <button onClick={() => showToast("Đã đồng bộ dữ liệu telemetry trạm!", "info")} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs flex items-center gap-2">
+                        <Icon.Refresh /> Làm mới Telemetry
+                      </button>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="text-xs font-black text-slate-400 uppercase border-b border-slate-100 tracking-wider">
+                            <th className="py-3.5 px-4">Mã Trạm</th>
+                            <th className="py-3.5 px-4">Tên Trạm</th>
+                            <th className="py-3.5 px-4">Tọa Độ GIS GPS</th>
+                            <th className="py-3.5 px-4">Dung Lượng Pin</th>
+                            <th className="py-3.5 px-4">Sức Chứa Drone</th>
+                            <th className="py-3.5 px-4">Trạng Thái</th>
+                            <th className="py-3.5 px-4 text-right">Chuyển Trạng Thái</th>
                           </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-sm font-medium text-slate-700">
+                          {stations.map(s => (
+                            <tr key={s.id} className="hover:bg-slate-50/80 transition">
+                              <td className="py-4 px-4 font-black text-slate-900">{s.id}</td>
+                              <td className="py-4 px-4 font-bold text-slate-900">{s.name}</td>
+                              <td className="py-4 px-4 text-xs font-mono font-bold text-slate-500">{s.location}</td>
+                              <td className="py-4 px-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-28 bg-slate-100 h-3 rounded-full overflow-hidden p-0.5 border border-slate-200">
+                                    <div
+                                      className={`h-full rounded-full transition-all duration-500 ${
+                                        s.battery > 70 ? 'bg-emerald-500' : s.battery > 30 ? 'bg-amber-500' : 'bg-rose-500'
+                                      }`}
+                                      style={{ width: `${s.battery}%` }}
+                                    ></div>
+                                  </div>
+                                  <span className="text-xs font-black text-slate-700">{s.battery}%</span>
+                                </div>
+                              </td>
+                              <td className="py-4 px-4 font-bold text-slate-800">{s.capacity} Slot</td>
+                              <td className="py-4 px-4">{renderStationBadge(s.status)}</td>
+                              <td className="py-4 px-4 text-right">
+                                <button
+                                  onClick={() => toggleStationStatus(s.id)}
+                                  className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs transition shadow-sm"
+                                >
+                                  Đổi Trạng Thái
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* TAB 4: QUẢN LÝ USER & PHÂN QUYỀN (KAN-43) */}
+              {activeTab === 'users' && (
+                <div className="space-y-6">
+                  <div className="bg-white border border-slate-200/80 rounded-3xl p-6 space-y-5 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-black text-slate-900">Quản Lý Phân Quyền Người Dùng (KAN-43)</h3>
+                        <p className="text-xs text-slate-400 font-bold">Thay đổi vai trò Admin, Operator hoặc Customer theo thời gian thực</p>
+                      </div>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="text-xs font-black text-slate-400 uppercase border-b border-slate-100 tracking-wider">
+                            <th className="py-3.5 px-4">User ID</th>
+                            <th className="py-3.5 px-4">Họ và Tên</th>
+                            <th className="py-3.5 px-4">Email</th>
+                            <th className="py-3.5 px-4">Phòng Ban</th>
+                            <th className="py-3.5 px-4">Vai Trò Hiện Tại</th>
+                            <th className="py-3.5 px-4 text-right">Gán Quyền Mới</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-sm font-medium text-slate-700">
+                          {users.map(u => (
+                            <tr key={u.id} className="hover:bg-slate-50/80 transition">
+                              <td className="py-4 px-4 font-mono text-xs font-black text-slate-400">{u.id}</td>
+                              <td className="py-4 px-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-8 h-8 rounded-full bg-slate-900 text-white font-black text-xs flex items-center justify-center">
+                                    {u.avatar}
+                                  </div>
+                                  <span className="font-bold text-slate-900">{u.name}</span>
+                                </div>
+                              </td>
+                              <td className="py-4 px-4 text-slate-500 font-medium">{u.email}</td>
+                              <td className="py-4 px-4 text-xs font-bold text-slate-500">{u.department}</td>
+                              <td className="py-4 px-4">
+                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-black ${
+                                  u.role === 'ADMIN' ? 'bg-purple-100 text-purple-800 border border-purple-200' :
+                                  u.role === 'OPERATOR' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
+                                  'bg-slate-100 text-slate-700 border border-slate-200'
+                                }`}>
+                                  {u.role}
+                                </span>
+                              </td>
+                              <td className="py-4 px-4 text-right">
+                                <select
+                                  value={u.role}
+                                  onChange={(e) => handleRoleChange(u.id, e.target.value)}
+                                  className="bg-slate-50 border border-slate-200 text-xs font-extrabold text-slate-800 rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-slate-900 cursor-pointer"
+                                >
+                                  <option value="CUSTOMER">CUSTOMER</option>
+                                  <option value="OPERATOR">OPERATOR</option>
+                                  <option value="ADMIN">ADMIN</option>
+                                </select>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )}
 
             </div>
-          )}
+          </main>
 
-          {/* TAB 2: DUYỆT ĐƠN HÀNG QUEUE (KAN-22) */}
-          {activeTab === 'orders' && (
-            <div className="space-y-6 animate-fadeIn">
-              <div className="bg-white border border-slate-200/80 rounded-3xl p-6 space-y-5 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-black text-slate-900">Hàng Chờ Xét Duyệt Xuất Kích (KAN-22)</h3>
-                    <p className="text-xs text-slate-400 font-bold">Xác nhận hoặc từ chối các đơn hàng yêu cầu giao bằng Drone</p>
-                  </div>
-                  <span className="px-4 py-1.5 rounded-full text-xs font-black bg-amber-100 text-amber-900">
-                    {pendingOrders.length} đơn cần xử lý
-                  </span>
-                </div>
-
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="text-xs font-black text-slate-400 uppercase border-b border-slate-100 tracking-wider">
-                        <th className="py-3.5 px-4">Mã Đơn</th>
-                        <th className="py-3.5 px-4">Khách Hàng</th>
-                        <th className="py-3.5 px-4">Địa Điểm Thả Hàng</th>
-                        <th className="py-3.5 px-4">Tải Trọng</th>
-                        <th className="py-3.5 px-4">Thời Gian Yêu Cầu</th>
-                        <th className="py-3.5 px-4 text-right">Thao Tác Duyệt</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 text-sm font-medium text-slate-700">
-                      {pendingOrders.length === 0 ? (
-                        <tr>
-                          <td colSpan="6" className="py-16 text-center text-slate-400 font-bold">
-                            🎉 Hoàn thành! Không còn đơn hàng nào đang chờ xét duyệt.
-                          </td>
-                        </tr>
-                      ) : (
-                        pendingOrders.map(o => (
-                          <tr key={o.id} className="hover:bg-slate-50/80 transition">
-                            <td className="py-4 px-4 font-black text-amber-600">{o.id}</td>
-                            <td className="py-4 px-4 font-bold text-slate-900">{o.customer}</td>
-                            <td className="py-4 px-4 text-slate-600 font-medium">
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-slate-400"><Icon.MapPin /></span>
-                                {o.address}
-                              </div>
-                            </td>
-                            <td className="py-4 px-4 font-bold text-slate-800">{o.weight} ({o.payload})</td>
-                            <td className="py-4 px-4 text-xs font-bold text-slate-400">{o.time}</td>
-                            <td className="py-4 px-4 text-right space-x-2">
-                              <button
-                                onClick={() => setModal({ isOpen: true, orderId: o.id, type: 'APPROVE', reason: '' })}
-                                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl text-xs shadow-md shadow-emerald-600/20 transition inline-flex items-center gap-1"
-                              >
-                                <Icon.Check /> Duyệt Đơn
-                              </button>
-                              <button
-                                onClick={() => setModal({ isOpen: true, orderId: o.id, type: 'REJECT', reason: '' })}
-                                className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-black rounded-xl text-xs transition inline-flex items-center gap-1"
-                              >
-                                <Icon.X /> Từ Chối
-                              </button>
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 3: QUẢN LÝ TRẠM (KAN-23) */}
-          {activeTab === 'stations' && (
-            <div className="space-y-6 animate-fadeIn">
-              <div className="bg-white border border-slate-200/80 rounded-3xl p-6 space-y-5 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-black text-slate-900">Quản Lý Trạm Đáp & Sạc Pin (KAN-23)</h3>
-                    <p className="text-xs text-slate-400 font-bold">Theo dõi tọa độ GPS, mức pin trạm và trạng thái vận hành</p>
-                  </div>
-                  <button onClick={() => showToast("Đã đồng bộ dữ liệu telemetry trạm!", "info")} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs flex items-center gap-2">
-                    <Icon.Refresh /> Làm mới Telemetry
+          {/* APPROVAL / REJECTION CONFIRMATION MODAL (KAN-22) */}
+          {modal.isOpen && (
+            <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md flex items-center justify-center p-4 z-50">
+              <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-md p-6 space-y-5 shadow-2xl">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                  <h3 className="text-lg font-black text-slate-900">
+                    {modal.type === 'APPROVE' ? `Xác Nhận Duyệt Đơn #${modal.orderId}` : `Từ Chối Đơn Hàng #${modal.orderId}`}
+                  </h3>
+                  <button onClick={() => setModal({ isOpen: false, orderId: null, type: null, reason: '' })} className="p-1 text-slate-400 hover:text-slate-600">
+                    <Icon.X />
                   </button>
                 </div>
 
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="text-xs font-black text-slate-400 uppercase border-b border-slate-100 tracking-wider">
-                        <th className="py-3.5 px-4">Mã Trạm</th>
-                        <th className="py-3.5 px-4">Tên Trạm</th>
-                        <th className="py-3.5 px-4">Tọa Độ GIS GPS</th>
-                        <th className="py-3.5 px-4">Dung Lượng Pin</th>
-                        <th className="py-3.5 px-4">Sức Chứa Drone</th>
-                        <th className="py-3.5 px-4">Trạng Thái</th>
-                        <th className="py-3.5 px-4 text-right">Chuyển Trạng Thái</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 text-sm font-medium text-slate-700">
-                      {stations.map(s => (
-                        <tr key={s.id} className="hover:bg-slate-50/80 transition">
-                          <td className="py-4 px-4 font-black text-slate-900">{s.id}</td>
-                          <td className="py-4 px-4 font-bold text-slate-900">{s.name}</td>
-                          <td className="py-4 px-4 text-xs font-mono font-bold text-slate-500">{s.location}</td>
-                          <td className="py-4 px-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-28 bg-slate-100 h-3 rounded-full overflow-hidden p-0.5 border border-slate-200">
-                                <div
-                                  className={`h-full rounded-full transition-all duration-500 ${
-                                    s.battery > 70 ? 'bg-emerald-500' : s.battery > 30 ? 'bg-amber-500' : 'bg-rose-500'
-                                  }`}
-                                  style={{ width: `${s.battery}%` }}
-                                ></div>
-                              </div>
-                              <span className="text-xs font-black text-slate-700">{s.battery}%</span>
-                            </div>
-                          </td>
-                          <td className="py-4 px-4 font-bold text-slate-800">{s.capacity} Slot</td>
-                          <td className="py-4 px-4">{renderStationBadge(s.status)}</td>
-                          <td className="py-4 px-4 text-right">
-                            <button
-                              onClick={() => toggleStationStatus(s.id)}
-                              className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs transition shadow-sm"
-                            >
-                              Đổi Trạng Thái
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          )}
+                <p className="text-sm text-slate-600 font-medium">
+                  {modal.type === 'APPROVE'
+                    ? 'Hệ thống sẽ cấp phép và phân bổ Drone gần nhất để giao đơn hàng này.'
+                    : 'Vui lòng ghi rõ lý do từ chối để gửi thông báo cho khách hàng.'}
+                </p>
 
-          {/* TAB 4: QUẢN LÝ USER & PHÂN QUYỀN (KAN-43) */}
-          {activeTab === 'users' && (
-            <div className="space-y-6 animate-fadeIn">
-              <div className="bg-white border border-slate-200/80 rounded-3xl p-6 space-y-5 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-black text-slate-900">Quản Lý Phân Quyền Người Dùng (KAN-43)</h3>
-                    <p className="text-xs text-slate-400 font-bold">Thay đổi vai trò Admin, Operator hoặc Customer theo thời gian thực</p>
-                  </div>
-                </div>
+                {modal.type === 'REJECT' && (
+                  <textarea
+                    value={modal.reason}
+                    onChange={(e) => setModal({ ...modal, reason: e.target.value })}
+                    placeholder="Nhập lý do hủy (ví dụ: Thời tiết xấu, Vượt quá tải trọng...)"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3.5 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900"
+                    rows="3"
+                  />
+                )}
 
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="text-xs font-black text-slate-400 uppercase border-b border-slate-100 tracking-wider">
-                        <th className="py-3.5 px-4">User ID</th>
-                        <th className="py-3.5 px-4">Họ và Tên</th>
-                        <th className="py-3.5 px-4">Email</th>
-                        <th className="py-3.5 px-4">Phòng Ban</th>
-                        <th className="py-3.5 px-4">Vai Trò Hiện Tại</th>
-                        <th className="py-3.5 px-4 text-right">Gán Quyền Mới</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 text-sm font-medium text-slate-700">
-                      {users.map(u => (
-                        <tr key={u.id} className="hover:bg-slate-50/80 transition">
-                          <td className="py-4 px-4 font-mono text-xs font-black text-slate-400">{u.id}</td>
-                          <td className="py-4 px-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full bg-slate-900 text-white font-black text-xs flex items-center justify-center">
-                                {u.avatar}
-                              </div>
-                              <span className="font-bold text-slate-900">{u.name}</span>
-                            </div>
-                          </td>
-                          <td className="py-4 px-4 text-slate-500 font-medium">{u.email}</td>
-                          <td className="py-4 px-4 text-xs font-bold text-slate-500">{u.department}</td>
-                          <td className="py-4 px-4">
-                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-black ${
-                              u.role === 'ADMIN' ? 'bg-purple-100 text-purple-800 border border-purple-200' :
-                              u.role === 'OPERATOR' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
-                              'bg-slate-100 text-slate-700 border border-slate-200'
-                            }`}>
-                              {u.role}
-                            </span>
-                          </td>
-                          <td className="py-4 px-4 text-right">
-                            <select
-                              value={u.role}
-                              onChange={(e) => handleRoleChange(u.id, e.target.value)}
-                              className="bg-slate-50 border border-slate-200 text-xs font-extrabold text-slate-800 rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-slate-900 cursor-pointer"
-                            >
-                              <option value="CUSTOMER">CUSTOMER</option>
-                              <option value="OPERATOR">OPERATOR</option>
-                              <option value="ADMIN">ADMIN</option>
-                            </select>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="flex items-center justify-end gap-3 pt-2">
+                  <button
+                    onClick={() => setModal({ isOpen: false, orderId: null, type: null, reason: '' })}
+                    className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl text-xs transition"
+                  >
+                    Hủy Bỏ
+                  </button>
+                  <button
+                    onClick={handleConfirmApproval}
+                    className={`px-5 py-2.5 font-black text-white rounded-2xl text-xs transition shadow-lg ${
+                      modal.type === 'APPROVE'
+                        ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/20'
+                        : 'bg-rose-600 hover:bg-rose-500 shadow-rose-600/20'
+                    }`}
+                  >
+                    {modal.type === 'APPROVE' ? 'Xác Nhận Xuất Kích' : 'Xác Nhận Từ Chối'}
+                  </button>
                 </div>
               </div>
             </div>
           )}
 
         </div>
-      </main>
+      );
+    }
 
-      {/* APPROVAL / REJECTION CONFIRMATION MODAL (KAN-22) */}
-      {modal.isOpen && (
-        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fadeIn">
-          <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-md p-6 space-y-5 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-              <h3 className="text-lg font-black text-slate-900">
-                {modal.type === 'APPROVE' ? `Xác Nhận Duyệt Đơn #${modal.orderId}` : `Từ Chối Đơn Hàng #${modal.orderId}`}
-              </h3>
-              <button onClick={() => setModal({ isOpen: false, orderId: null, type: null, reason: '' })} className="p-1 text-slate-400 hover:text-slate-600">
-                <Icon.X />
-              </button>
-            </div>
-
-            <p className="text-sm text-slate-600 font-medium">
-              {modal.type === 'APPROVE'
-                ? 'Hệ thống sẽ cấp phép và phân bổ Drone gần nhất để giao đơn hàng này.'
-                : 'Vui lòng ghi rõ lý do từ chối để gửi thông báo cho khách hàng.'}
-            </p>
-
-            {modal.type === 'REJECT' && (
-              <textarea
-                value={modal.reason}
-                onChange={(e) => setModal({ ...modal, reason: e.target.value })}
-                placeholder="Nhập lý do hủy (ví dụ: Thời tiết xấu, Vượt quá tải trọng...)"
-                className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3.5 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900"
-                rows="3"
-              />
-            )}
-
-            <div className="flex items-center justify-end gap-3 pt-2">
-              <button
-                onClick={() => setModal({ isOpen: false, orderId: null, type: null, reason: '' })}
-                className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl text-xs transition"
-              >
-                Hủy Bỏ
-              </button>
-              <button
-                onClick={handleConfirmApproval}
-                className={`px-5 py-2.5 font-black text-white rounded-2xl text-xs transition shadow-lg ${
-                  modal.type === 'APPROVE'
-                    ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/20'
-                    : 'bg-rose-600 hover:bg-rose-500 shadow-rose-600/20'
-                }`}
-              >
-                {modal.type === 'APPROVE' ? 'Xác Nhận Xuất Kích' : 'Xác Nhận Từ Chối'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-    </div>
-  );
-}
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
