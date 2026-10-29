@@ -7,7 +7,9 @@ public interface IAppDbContext
 {
     DbSet<LandingStation> Stations { get; }
     DbSet<DeliveryOrder> DeliveryOrders { get; }
+    DbSet<OrderStatusHistory> OrderStatusHistories { get; }
     DbSet<Package> Packages { get; }
+    DbSet<Drone> Drones { get; }
     DbSet<CustomerAddress> CustomerAddresses { get; }
 
     Task<int> SaveChangesAsync(
