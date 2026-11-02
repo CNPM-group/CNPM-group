@@ -1,110 +1,209 @@
+# SmartDroneDelivery
 
-# 🚁 SmartDroneDelivery
-### Hệ thống quản lý giao hàng bằng Drone tích hợp AI
+AI-powered Drone Delivery Management Platform – đồ án Công nghệ phần mềm, nhóm CNPM, Đại học Giao thông vận tải TP.HCM (UTH). GVHD: Nguyễn Văn Chiến.
 
-## 1. Giới thiệu đề tài
+Nền tảng quản lý nghiệp vụ giao hàng bằng drone: khách tạo đơn, chọn trạm gửi/nhận, nhân viên duyệt và điều phối, theo dõi trạng thái, xác nhận nhận hàng, có trợ lý AI. Hệ thống **không** điều khiển drone thật.
 
-**SmartDroneDelivery** là nền tảng quản lý giao hàng bằng thiết bị bay không người lái (Drone), tích hợp trí tuệ nhân tạo (AI) nhằm nâng cao hiệu quả trong hoạt động giao nhận hàng hóa.
+Backend viết bằng ASP.NET Core 8, tổ chức theo Clean Architecture giống repo mẫu [Flask-CleanArchitecture](https://github.com/ChienNguyensrdn/Flask-CleanArchitecture) của thầy: cùng tên tầng, cùng cách chia thư mục, chỉ đổi ngôn ngữ. Bảng đối chiếu từng file Flask ↔ C# nằm ở [docs/clean-architecture.md](docs/clean-architecture.md).
 
-Hệ thống hỗ trợ doanh nghiệp quản lý toàn bộ quy trình giao hàng, từ khi khách hàng tạo đơn đến khi hàng hóa được giao và xác nhận thành công.
+# Architecture
 
-Trong bối cảnh thương mại điện tử và logistics ngày càng phát triển, việc ứng dụng Drone và AI góp phần tối ưu quy trình vận hành, giảm thời gian giao hàng trong những điều kiện phù hợp và cải thiện trải nghiệm khách hàng.
-
-## 2. Mục tiêu của hệ thống
-
-- Quản lý thông tin khách hàng, đơn hàng và kiện hàng.
-- Theo dõi trạng thái giao hàng theo từng đơn.
-- Hỗ trợ quản lý quá trình phân công và thực hiện giao hàng bằng Drone.
-- Ứng dụng AI để phân tích dữ liệu, đề xuất tuyến giao hàng và dự đoán thời gian giao dự kiến.
-- Cung cấp thông tin minh bạch để khách hàng theo dõi và xác nhận giao hàng.
-
-## 3. Các chức năng chính
-
-| Chức năng | Mô tả |
-|---|---|
-| Đăng nhập | Cho phép người dùng truy cập hệ thống. |
-| Tạo đơn giao hàng | Nhập địa chỉ lấy hàng, địa chỉ nhận hàng và thông tin kiện hàng. |
-| Quản lý danh sách đơn | Hiển thị mã đơn, thông tin giao nhận và trạng thái đơn hàng. |
-| Theo dõi trạng thái đơn | Theo dõi tiến trình từ lúc tạo đơn đến khi hoàn thành. |
-| Xác nhận giao hàng | Xác nhận người nhận đã nhận hàng và lưu thông tin minh chứng. |
-| Hỗ trợ AI | Đề xuất tuyến đường, ước tính thời gian giao hàng và cảnh báo nguy cơ chậm trễ. |
-
-## 4. Vai trò của AI
-
-AI đóng vai trò hỗ trợ ra quyết định trong hoạt động giao hàng.
-
-Dựa trên dữ liệu đơn hàng, địa điểm giao nhận, thời tiết và các điều kiện vận hành khả dụng, hệ thống có thể:
-
-- Đề xuất tuyến đường giao hàng phù hợp.
-- Dự đoán thời gian giao hàng.
-- Cảnh báo các trường hợp có nguy cơ giao hàng chậm.
-- Hỗ trợ phân tích dữ liệu và nâng cao hiệu quả vận hành.
-
-**Lưu ý:** Các đề xuất của AI cần được đánh giá cùng với giới hạn tải trọng, dung lượng pin, vùng bay được phép và điều kiện an toàn. AI không thay thế các yêu cầu an toàn và quy định vận hành Drone.
-
-## 5. Đối tượng sử dụng
-
-### Khách hàng (Customer)
-- Tạo đơn giao hàng.
-- Quản lý thông tin đơn hàng.
-- Theo dõi quá trình giao hàng.
-- Xác nhận khi nhận được hàng.
-
-### Nhân viên vận hành (Staff)
-- Quản lý đơn hàng.
-- Kiểm tra thông tin giao nhận.
-- Theo dõi tiến độ giao hàng.
-- Hỗ trợ xử lý các vấn đề phát sinh.
-
-### Quản trị viên (Administrator)
-- Quản lý tài khoản người dùng.
-- Quản lý dữ liệu hệ thống.
-- Theo dõi hoạt động vận hành.
-- Quản lý và giám sát hệ thống.
-
-## 6. Công nghệ sử dụng
-
-Các thành phần công nghệ của dự án được tổ chức theo cấu trúc:
-
-- **Backend:** ASP.NET Core.
-- **Database:** PostgreSQL.
-- **Frontend:** Web Application.
-- **Mobile:** Mobile Application.
-- **AI:** Tích hợp các dịch vụ AI hỗ trợ phân tích và đề xuất.
-
-## 7. Kết quả mong đợi
-
-SmartDroneDelivery hướng đến xây dựng một nền tảng quản lý giao hàng hiện đại, có khả năng:
-
-- Hỗ trợ tự động hóa quy trình giao nhận.
-- Cải thiện khả năng quản lý và theo dõi đơn hàng.
-- Nâng cao hiệu quả sử dụng Drone.
-- Hỗ trợ doanh nghiệp đưa ra quyết định vận hành dựa trên dữ liệu và AI.
-- Cải thiện trải nghiệm của khách hàng.
-
-## 8. Cấu trúc dự án
-
-```text
-CNPM-group/
-├── .github/
-│   └── workflows/
-├── docs/
-├── mobile/
-├── src/
-├── web/
-├── .env.example
-├── .gitignore
-├── README.md
-└── schema.sql
+```bash
+    ├── .github/workflows/ci.yml      # build tự động mỗi lần push / mở PR
+    ├── docs                          # tài liệu: kiến trúc, API, CSDL, use case, AI
+    ├── scripts
+    │   ├── run_postgres.sh           # bật PostgreSQL bằng Docker (Linux/macOS)
+    │   └── run_postgres.ps1          # bật PostgreSQL bằng Docker (Windows)
+    ├── src
+    │   ├── Api
+    │   │   ├── Controllers
+    │   │   │   └── ...               # controller cho API (nhận request, trả response)
+    │   │   ├── Schemas
+    │   │   │   └── ...               # request/response schema (DTO + validate)
+    │   │   ├── Middleware.cs
+    │   │   ├── Responses.cs
+    │   │   ├── Requests.cs
+    │   │   └── Swagger.cs
+    │   ├── Infrastructure
+    │   │   ├── Services
+    │   │   │   └── ...               # dịch vụ dùng thư viện / bên thứ ba (JWT, LLM)
+    │   │   ├── Databases
+    │   │   │   └── ...               # DbContext, khởi tạo và seed CSDL
+    │   │   ├── Repositories
+    │   │   │   └── ...               # cài đặt các interface I*Repository bằng EF Core
+    │   │   └── Models
+    │   │       └── ...               # ánh xạ ORM: model ↔ bảng PostgreSQL
+    │   ├── Domain
+    │   │   ├── Constants.cs
+    │   │   ├── Exceptions.cs
+    │   │   └── Models
+    │   │       └── ...               # model nghiệp vụ + interface I*Repository
+    │   ├── Services
+    │   │   └── ...                   # nghiệp vụ (business logic)
+    │   ├── Migrations
+    │   │   └── ...                   # EF Core migration (tương đương thư mục migrations của Flask)
+    │   ├── Program.cs                # = app.py
+    │   ├── CreateApp.cs              # = create_app.py
+    │   ├── Config.cs                 # = config.py
+    │   ├── Cors.cs                   # = cors.py
+    │   ├── DependencyContainer.cs    # = dependency_container.py
+    │   ├── ErrorHandler.cs           # = error_handler.py
+    │   ├── AppLogging.cs             # = app_logging.py
+    │   ├── appsettings.json
+    │   └── SmartDrone.csproj
+    ├── web                           # giao diện web (HTML/JS)
+    ├── mobile                        # app Flutter cho khách hàng
+    ├── docker-compose.yml            # PostgreSQL + MinIO
+    └── chay-thu.bat                  # chạy thử 1 phát trên Windows
 ```
 
-## 9. Repository
+Mỗi thư mục trong `src/` có một `README.md` giải thích từng file trong đó làm gì, dùng thế nào. File quan trọng có thêm file `.md` cùng tên đặt ngay cạnh (ví dụ `src/Services/OrderService.md`).
 
-GitHub: https://github.com/CNPM-group/CNPM-group
+## Domain Layer
 
----
+`src/Domain` – lõi nghiệp vụ, không phụ thuộc framework hay CSDL.
+- `Models/`: class nghiệp vụ (`DeliveryOrder`, `LandingStation`, `Package`, `User`...) và interface `I*Repository`, `ITokenService`, `ILlmClient`. Tầng trên chỉ biết interface, không biết EF Core hay PostgreSQL.
+- `Constants.cs`: role, trạng thái đơn/trạm/drone, giới hạn phân trang.
+- `Exceptions.cs`: lỗi nghiệp vụ (`NotFoundException`, `ValidationException`, `ConflictException`...). `ErrorHandler.cs` đổi chúng thành HTTP status.
 
-**SmartDroneDelivery – AI-powered Drone Delivery Management Platform**
+Chi tiết: [src/Domain/README.md](src/Domain/README.md)
 
-*Dự án phát triển nền tảng quản lý giao hàng bằng Drone tích hợp trí tuệ nhân tạo.*
+## Services Layer
 
+`src/Services` – quy tắc nghiệp vụ: trạm gửi ≠ trạm nhận, kiện không vượt tải drone, chỉ hủy/sửa đơn khi `Pending`, mỗi khách chỉ một địa chỉ mặc định, chatbot chỉ được tra đơn của chính khách... Service nhận interface repository qua constructor, không đụng trực tiếp `DbContext`.
+
+Chi tiết: [src/Services/README.md](src/Services/README.md)
+
+## Infrastructure Layer
+
+`src/Infrastructure` – phần "cắm vào" bên ngoài: PostgreSQL qua EF Core, ASP.NET Identity, JWT, LLM API. Repository cài đặt interface của Domain, nên muốn đổi CSDL chỉ sửa tầng này.
+
+Chi tiết: [src/Infrastructure/README.md](src/Infrastructure/README.md)
+
+## Luồng một request
+
+```
+Client (web/mobile) → Api/Controllers → Services → Domain (interface) → Infrastructure/Repositories → PostgreSQL
+```
+
+Sơ đồ sequence (PlantUML) và ví dụ "tạo đơn hàng" đi qua từng tầng: [docs/clean-architecture.md](docs/clean-architecture.md)
+
+## Download source code (CMD)
+
+    git clone https://github.com/nguyenmauhuynh/cnpm-group.git
+    cd cnpm-group
+
+## Kiểm tra máy đã cài .NET 8 SDK và Docker chưa
+
+    dotnet --version
+    docker --version
+
+Chưa có thì cài [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) và [Docker Desktop](https://www.docker.com/products/docker-desktop/) (mở Docker Desktop lên trước khi chạy).
+
+## Run app
+
+- Bước 1: Tạo file `.env` từ file mẫu (chứa mật khẩu PostgreSQL, MinIO)
+  ## Windows:
+        copy .env.example .env
+  ## Unix/MacOS:
+        cp .env.example .env
+
+- Bước 2: Bật PostgreSQL bằng Docker
+  ## Windows (PowerShell):
+        .\scripts\run_postgres.ps1
+  ### Nếu PowerShell chặn chạy script, mở PowerShell (Administrator):
+        Set-ExecutionPolicy RemoteSigned -Force
+  ## Unix/MacOS:
+        ./scripts/run_postgres.sh
+
+- Bước 3: Cài thư viện (NuGet)
+  ## Install:
+        dotnet restore src/SmartDrone.csproj
+
+- Bước 4: Chạy API
+  ## Run:
+        dotnet run --project src --launch-profile http
+
+  Lần chạy đầu (môi trường Development) API tự chạy migration, tạo 5 role, 5 trạm, 20 tuyến bay, 3 drone và 5 tài khoản demo.
+
+      Truy cập http://localhost:5080/swagger   (tài liệu API, bấm Authorize dán token)
+      Truy cập http://localhost:5080/health    (kiểm tra API + CSDL)
+
+Windows lười gõ thì nhấp đúp `chay-thu.bat` ở thư mục gốc: script làm hết các bước trên, test đăng nhập và ghi kết quả ra `ket-qua-test.txt`.
+
+## Tài khoản demo
+
+Mật khẩu chung `Demo@12345`:
+
+| Email | Role |
+|---|---|
+| customer@drone.local | Customer |
+| dispatcher@drone.local | Dispatcher |
+| stationoperator@drone.local | StationOperator |
+| manager@drone.local | Manager |
+| admin@drone.local | Admin |
+
+## Cấu hình
+
+File `.env` ở thư mục gốc (dùng cho docker-compose):
+
+    DB_PASSWORD=drone_dev
+    MINIO_ROOT_USER=minioadmin
+    MINIO_ROOT_PASSWORD=minioadmin123
+
+File `src/appsettings.Development.json` (chỉ cho máy dev):
+
+    ConnectionStrings:Default = Host=localhost;Port=5432;Database=drone;Username=drone;Password=drone_dev
+    Jwt:Key                   = khóa ký JWT, tối thiểu 32 ký tự
+    Seed:DemoUsers            = true (tạo 5 tài khoản demo)
+
+Khóa thật (JWT, LLM API key) **không commit**, đặt qua biến môi trường, dấu `:` đổi thành `__`:
+
+    # Windows (PowerShell)
+    $env:Jwt__Key="chuoi-bi-mat-it-nhat-32-ky-tu..."
+    $env:Llm__ApiKey="sk-..."
+    # Unix/MacOS
+    export Jwt__Key="chuoi-bi-mat-it-nhat-32-ky-tu..."
+    export Llm__ApiKey="sk-..."
+
+## Pull image PostgreSQL (nếu không dùng script)
+
+```bash
+docker pull postgres:16
+docker compose up -d db
+```
+
+## Test kết nối PostgreSQL
+
+```bash
+docker compose exec db psql -U drone -d drone -c "\dt"
+```
+
+## Migration (EF Core = ORM giống SQLAlchemy bên Flask)
+
+```bash
+dotnet tool install --global dotnet-ef
+# sửa model / cấu hình bảng xong thì tạo migration mới
+dotnet ef migrations add <TenMigration> --project src -o Migrations
+# áp migration vào CSDL (API cũng tự làm khi chạy Development)
+dotnet ef database update --project src
+```
+
+## Chạy web và mobile
+
+- Web: `npx serve -l 5173 web` rồi mở http://localhost:5173/login.html – xem [web/README.md](web/README.md)
+- Mobile: xem [mobile/README.md](mobile/README.md)
+
+## Tài liệu
+
+Danh mục tài liệu: [docs/README.md](docs/README.md). Quy ước code, Git, API: [docs/CONVENTIONS.md](docs/CONVENTIONS.md).
+
+## Nhóm
+
+| Thành viên | Phụ trách |
+|---|---|
+| Nguyễn Ngọc Trần Hoàng Tiến (trưởng nhóm) | Kiến trúc, API spec, quản lý dự án |
+| Nguyễn Thiện Vinh | Backend, cơ sở dữ liệu |
+| Nguyễn Mậu Huỳnh | Web |
+| Lê Công Anh Đức | Mobile |
+| Lê Công Anh Tài | Dịch vụ AI, kiểm thử |

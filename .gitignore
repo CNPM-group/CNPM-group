@@ -10,3 +10,5 @@ dist/
 build/
 .dart_tool/
 *.log
+ket-qua-test.txt
+appsettings.Local.json

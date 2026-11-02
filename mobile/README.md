@@ -45,3 +45,22 @@ Tài khoản demo (mật khẩu `Demo@12345`): `customer@drone.local`. Tạo đ�
 ```bash
 flutter test
 ```
+
+## Các file trong `lib/`
+
+| File | Tác dụng |
+|---|---|
+| `main.dart` | Điểm vào app; `Gate` kiểm tra đã đăng nhập chưa để mở trang login hoặc danh sách đơn |
+| `config.dart` | `apiBaseUrl`, mặc định `http://10.0.2.2:5080/api/v1` (emulator), đổi bằng `--dart-define=API_URL=...` |
+| `api.dart` | Lớp `Api` gọi backend (Dio): gắn header `Authorization: Bearer`, đổi lỗi ProblemDetails (`errors` / `detail`) thành `ApiException` có câu tiếng Việt |
+| `auth_store.dart` | `AuthStore` giữ token + thông tin user, lưu lại để mở app không phải đăng nhập lại |
+| `models.dart` | Model JSON: `AuthData`, `Station`, `PackageInfo`, đơn hàng, trang đơn, lịch sử |
+| `format.dart` | Đổi mã trạng thái (`Pending`...) sang nhãn tiếng Việt, định dạng ngày giờ |
+| `nav.dart` | `navigatorKey` toàn cục (đá về trang login khi token hết hạn) |
+| `widgets.dart` | `StatusChip` hiển thị trạng thái đơn có màu |
+| `pages/login_page.dart` | Đăng nhập / đăng ký |
+| `pages/orders_page.dart` | Danh sách đơn của khách (`GET /orders`), bấm vào xem chi tiết, nút tạo đơn |
+| `pages/create_order_page.dart` | Tạo đơn: chọn trạm gửi/nhận, nhập cân nặng + kích thước, chọn ảnh kiện |
+| `pages/order_detail_page.dart` | Chi tiết đơn + timeline (`/orders/{id}/history`), nút hủy khi `Pending` |
+
+`test/widget_test.dart`: test mẫu của Flutter.

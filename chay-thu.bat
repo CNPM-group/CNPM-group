@@ -26,20 +26,16 @@ echo Docker compose: OK >> %OUT%
 timeout /t 8 /nobreak >nul
 
 echo [4/6] Build...
-dotnet build src\SmartDrone.Api\SmartDrone.Api.csproj -nologo -v q
+dotnet build src\SmartDrone.csproj -nologo -v q
 if errorlevel 1 (echo BUILD LOI. Chup man hinh gui lai. & echo Build: LOI >> %OUT% & pause & exit /b 1)
 echo Build: THANH CONG >> %OUT%
 
-echo [5/6] Tao migration neu chua co...
+echo [5/6] Kiem tra cong cu migration...
 dotnet ef --version >nul 2>&1 || dotnet tool install --global dotnet-ef
-if not exist src\SmartDrone.Infrastructure\Persistence\Migrations (
-  dotnet ef migrations add Initial -p src\SmartDrone.Infrastructure -s src\SmartDrone.Api -o Persistence/Migrations
-  if errorlevel 1 (echo Migration: LOI >> %OUT% & echo MIGRATION LOI. Chup man hinh gui lai. & pause & exit /b 1)
-)
-echo Migration: OK >> %OUT%
+echo Migration: dung src\Migrations (API tu chay MigrateAsync khi start) >> %OUT%
 
 echo [6/6] Chay API va test dang nhap...
-start "SmartDrone API" cmd /k dotnet run --project src\SmartDrone.Api --launch-profile http
+start "SmartDrone API" cmd /k dotnet run --project src --launch-profile http
 set /a n=0
 :wait
 timeout /t 3 /nobreak >nul
