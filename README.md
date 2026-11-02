@@ -1,52 +1,110 @@
-# CNPM-group
-SmartDroneDelivery – Hệ thống quản lý giao hàng bằng Drone tích hợp AI
 
-1. Giới thiệu đề tài
+# 🚁 SmartDroneDelivery
+### Hệ thống quản lý giao hàng bằng Drone tích hợp AI
 
-SmartDroneDelivery là nền tảng quản lý giao hàng bằng thiết bị bay không người lái (Drone), tích hợp trí tuệ nhân tạo (AI) nhằm nâng cao hiệu quả trong hoạt động giao nhận hàng hóa. Hệ thống hướng đến việc hỗ trợ doanh nghiệp quản lý toàn bộ quy trình giao hàng, từ lúc khách hàng tạo đơn đến khi hàng hóa được giao và xác nhận thành công.
+## 1. Giới thiệu đề tài
 
-Trong bối cảnh thương mại điện tử và logistics ngày càng phát triển, việc ứng dụng Drone và AI có thể giúp tối ưu quy trình vận hành, giảm thời gian giao hàng trong những điều kiện phù hợp và cải thiện trải nghiệm khách hàng.
+**SmartDroneDelivery** là nền tảng quản lý giao hàng bằng thiết bị bay không người lái (Drone), tích hợp trí tuệ nhân tạo (AI) nhằm nâng cao hiệu quả trong hoạt động giao nhận hàng hóa.
 
-2. Mục tiêu của hệ thống
+Hệ thống hỗ trợ doanh nghiệp quản lý toàn bộ quy trình giao hàng, từ khi khách hàng tạo đơn đến khi hàng hóa được giao và xác nhận thành công.
 
-Quản lý thông tin khách hàng, đơn hàng và kiện hàng.
+Trong bối cảnh thương mại điện tử và logistics ngày càng phát triển, việc ứng dụng Drone và AI góp phần tối ưu quy trình vận hành, giảm thời gian giao hàng trong những điều kiện phù hợp và cải thiện trải nghiệm khách hàng.
 
-Theo dõi trạng thái giao hàng theo từng đơn.
+## 2. Mục tiêu của hệ thống
 
-Hỗ trợ quản lý quá trình phân công và thực hiện giao hàng bằng Drone.
+- Quản lý thông tin khách hàng, đơn hàng và kiện hàng.
+- Theo dõi trạng thái giao hàng theo từng đơn.
+- Hỗ trợ quản lý quá trình phân công và thực hiện giao hàng bằng Drone.
+- Ứng dụng AI để phân tích dữ liệu, đề xuất tuyến giao hàng và dự đoán thời gian giao dự kiến.
+- Cung cấp thông tin minh bạch để khách hàng theo dõi và xác nhận giao hàng.
 
-Ứng dụng AI để hỗ trợ phân tích dữ liệu, đề xuất tuyến giao hàng và dự đoán thời gian giao dự kiến.
+## 3. Các chức năng chính
 
-Cung cấp thông tin minh bạch để khách hàng theo dõi và xác nhận giao hàng.
+| Chức năng | Mô tả |
+|---|---|
+| Đăng nhập | Cho phép người dùng truy cập hệ thống. |
+| Tạo đơn giao hàng | Nhập địa chỉ lấy hàng, địa chỉ nhận hàng và thông tin kiện hàng. |
+| Quản lý danh sách đơn | Hiển thị mã đơn, thông tin giao nhận và trạng thái đơn hàng. |
+| Theo dõi trạng thái đơn | Theo dõi tiến trình từ lúc tạo đơn đến khi hoàn thành. |
+| Xác nhận giao hàng | Xác nhận người nhận đã nhận hàng và lưu thông tin minh chứng. |
+| Hỗ trợ AI | Đề xuất tuyến đường, ước tính thời gian giao hàng và cảnh báo nguy cơ chậm trễ. |
 
-3. Các chức năng chính
+## 4. Vai trò của AI
 
-Đăng nhập: Cho phép người dùng truy cập hệ thống.
+AI đóng vai trò hỗ trợ ra quyết định trong hoạt động giao hàng.
 
-Tạo đơn giao hàng: Nhập địa chỉ lấy hàng, địa chỉ nhận hàng và thông tin kiện hàng.
+Dựa trên dữ liệu đơn hàng, địa điểm giao nhận, thời tiết và các điều kiện vận hành khả dụng, hệ thống có thể:
 
-Quản lý danh sách đơn: Hiển thị mã đơn, thông tin giao nhận và trạng thái đơn hàng.
+- Đề xuất tuyến đường giao hàng phù hợp.
+- Dự đoán thời gian giao hàng.
+- Cảnh báo các trường hợp có nguy cơ giao hàng chậm.
+- Hỗ trợ phân tích dữ liệu và nâng cao hiệu quả vận hành.
 
-Theo dõi trạng thái đơn: Hiển thị tiến trình từ lúc tạo đơn, phê duyệt, đang giao đến hoàn thành.
+**Lưu ý:** Các đề xuất của AI cần được đánh giá cùng với giới hạn tải trọng, dung lượng pin, vùng bay được phép và điều kiện an toàn. AI không thay thế các yêu cầu an toàn và quy định vận hành Drone.
 
-Xác nhận giao hàng: Hỗ trợ xác nhận người nhận đã nhận được hàng và lưu thông tin minh chứng giao hàng.
+## 5. Đối tượng sử dụng
 
-Hỗ trợ AI: Đề xuất tuyến đường phù hợp, ước tính thời gian giao hàng và hỗ trợ phát hiện các trường hợp giao hàng có nguy cơ chậm trễ.
+### Khách hàng (Customer)
+- Tạo đơn giao hàng.
+- Quản lý thông tin đơn hàng.
+- Theo dõi quá trình giao hàng.
+- Xác nhận khi nhận được hàng.
 
-4. Vai trò của AI
+### Nhân viên vận hành (Staff)
+- Quản lý đơn hàng.
+- Kiểm tra thông tin giao nhận.
+- Theo dõi tiến độ giao hàng.
+- Hỗ trợ xử lý các vấn đề phát sinh.
 
-AI đóng vai trò hỗ trợ ra quyết định trong hoạt động giao hàng. Dựa trên dữ liệu đơn hàng, địa điểm giao nhận, thời tiết và các điều kiện vận hành khả dụng, hệ thống có thể đề xuất tuyến đường, dự đoán thời gian giao hàng và cảnh báo các rủi ro tiềm ẩn.
+### Quản trị viên (Administrator)
+- Quản lý tài khoản người dùng.
+- Quản lý dữ liệu hệ thống.
+- Theo dõi hoạt động vận hành.
+- Quản lý và giám sát hệ thống.
 
-Các đề xuất của AI cần được đánh giá cùng với những giới hạn về tải trọng, dung lượng pin, vùng bay được phép và điều kiện an toàn. AI là thành phần hỗ trợ quản lý, không thay thế các yêu cầu an toàn và quy định vận hành Drone.
+## 6. Công nghệ sử dụng
 
-5. Đối tượng sử dụng
+Các thành phần công nghệ của dự án được tổ chức theo cấu trúc:
 
-Khách hàng: Tạo đơn và theo dõi quá trình giao hàng.
+- **Backend:** ASP.NET Core.
+- **Database:** PostgreSQL.
+- **Frontend:** Web Application.
+- **Mobile:** Mobile Application.
+- **AI:** Tích hợp các dịch vụ AI hỗ trợ phân tích và đề xuất.
 
-Nhân viên vận hành: Quản lý đơn hàng, kiểm tra thông tin và theo dõi tiến độ.
+## 7. Kết quả mong đợi
 
-Quản trị viên: Quản lý tài khoản, dữ liệu và hoạt động của hệ thống.
+SmartDroneDelivery hướng đến xây dựng một nền tảng quản lý giao hàng hiện đại, có khả năng:
 
-6. Kết quả mong đợi
+- Hỗ trợ tự động hóa quy trình giao nhận.
+- Cải thiện khả năng quản lý và theo dõi đơn hàng.
+- Nâng cao hiệu quả sử dụng Drone.
+- Hỗ trợ doanh nghiệp đưa ra quyết định vận hành dựa trên dữ liệu và AI.
+- Cải thiện trải nghiệm của khách hàng.
 
-SmartDroneDelivery hướng đến xây dựng một nền tảng quản lý giao hàng hiện đại, có khả năng hỗ trợ tự động hóa quy trình, cải thiện khả năng theo dõi đơn hàng và hỗ trợ doanh nghiệp đưa ra quyết định vận hành hiệu quả hơn nhờ AI.
+## 8. Cấu trúc dự án
+
+```text
+CNPM-group/
+├── .github/
+│   └── workflows/
+├── docs/
+├── mobile/
+├── src/
+├── web/
+├── .env.example
+├── .gitignore
+├── README.md
+└── schema.sql
+```
+
+## 9. Repository
+
+GitHub: https://github.com/CNPM-group/CNPM-group
+
+---
+
+**SmartDroneDelivery – AI-powered Drone Delivery Management Platform**
+
+*Dự án phát triển nền tảng quản lý giao hàng bằng Drone tích hợp trí tuệ nhân tạo.*
+
