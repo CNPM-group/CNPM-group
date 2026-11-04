@@ -129,6 +129,8 @@ Chưa có thì cài [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.
       Truy cập http://localhost:5080/swagger   (tài liệu API, bấm Authorize dán token)
       Truy cập http://localhost:5080/health    (kiểm tra API + CSDL)
 
+**Chạy cả hệ thống bằng 1 lệnh (Docker):** `docker compose up -d --build` → API ở http://localhost:5080/swagger, web ở http://localhost:5173/login.html, PostgreSQL và MinIO chạy kèm. Khỏi cài .NET.
+
 Windows lười gõ thì nhấp đúp `chay-thu.bat` ở thư mục gốc: script làm hết các bước trên, test đăng nhập và ghi kết quả ra `ket-qua-test.txt`.
 
 ## Tài khoản demo

@@ -11,6 +11,7 @@ Toàn bộ backend, một project ASP.NET Core 8 (`SmartDrone.csproj`). Bốn th
 | `Domain/` | Model nghiệp vụ, interface, hằng số, exception | [Domain/README.md](Domain/README.md) |
 | `Infrastructure/` | CSDL, repository, JWT, LLM | [Infrastructure/README.md](Infrastructure/README.md) |
 | `Migrations/` | EF Core migration | [Migrations/README.md](Migrations/README.md) |
+| `Dockerfile` | | Build image API (.NET 8 SDK → publish → chạy trên `aspnet:8.0`, cổng 8080). Dùng bởi `docker-compose.yml` ở gốc | |
 | `Properties/` | `launchSettings.json`: profile `http` chạy ở `http://localhost:5080`, môi trường `Development`, tự mở `/swagger` | |
 
 ## File ở gốc `src/`

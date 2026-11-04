@@ -44,6 +44,14 @@ public enum StationStatus
     Maintenance
 }
 
+public static class FlightStatus
+{
+    public const string Scheduled = "Scheduled";
+    public const string Flying = "Flying";
+    public const string Landed = "Landed";
+    public const string Aborted = "Aborted";
+}
+
 public enum DroneStatus
 {
     Idle,

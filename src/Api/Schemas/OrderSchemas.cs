@@ -94,3 +94,9 @@ public sealed record EtaResponse(double DistanceKm, double EstimatedMinutes)
 public sealed record NoteRequest([MaxLength(1000)] string? Note);
 
 public sealed record RejectRequest([Required, MinLength(1), MaxLength(1000)] string Reason);
+
+public sealed record ScheduleRequest([Required] Guid DroneId, DateTime? ScheduledAtUtc);
+
+public sealed record ConfirmRequest([Required, RegularExpression(@"^\d{6}$", ErrorMessage = "Mã nhận hàng gồm 6 chữ số.")] string Otp);
+
+public sealed record FailRequest([Required, MinLength(1), MaxLength(1000)] string Reason);

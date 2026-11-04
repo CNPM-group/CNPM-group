@@ -9,3 +9,5 @@ public class User
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
 }
+
+public sealed record UserWithRoles(User User, IReadOnlyList<string> Roles);

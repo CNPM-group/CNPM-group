@@ -10,6 +10,9 @@ Mọi repository nhận cùng một `AppDbContext` (scoped theo request). Hàm `
 | `StationRepository.cs` | `IStationRepository` | List dùng `AsNoTracking` (chỉ đọc, nhanh hơn); `GetByIdAsync` để tracking nên sửa xong chỉ cần `UpdateAsync`. |
 | `OrderRepository.cs` | `IOrderRepository` | Chi tiết: [OrderRepository.md](OrderRepository.md) |
 | `CustomerAddressRepository.cs` | `ICustomerAddressRepository` | Mọi truy vấn lọc theo `customerId`. `HasOtherDefaultAsync(customerId, exceptId)` bỏ qua chính địa chỉ đang sửa. |
+| `DeliveryRepository.cs` | `IDeliveryRepository` | `AddFlight`/`AddConfirmation` chỉ đưa vào DbContext, **không** tự lưu: `DeliveryService` gọi `IOrderRepository.UpdateAsync` ở cuối để đơn, lịch sử, chuyến bay, OTP, thông báo được lưu chung một transaction. |
+| `NotificationRepository.cs` | `INotificationRepository` | `Add` cũng chỉ đưa vào DbContext; `SaveAsync` để lưu khi đánh dấu đã đọc. |
+| `ReportRepository.cs` | `IReportRepository` | Truy vấn thống kê chỉ đọc (`AsNoTracking`); tên trạm và cân nặng lấy bằng subquery trong cùng câu SQL. |
 | `DroneRepository.cs` | `IDroneRepository` | CRUD drone, `CodeExistsAsync(code, exceptId)` kiểm tra trùng mã (bỏ qua chính drone đang sửa), `AnyCanCarryAsync(kg)`: có drone nào `MaxPayloadKg ≥ kg`. |
 
 ## Viết repository mới

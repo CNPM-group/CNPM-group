@@ -10,7 +10,7 @@ namespace SmartDrone.Api.Controllers;
 [ApiController]
 [Route(ApiConstants.Prefix + "/orders")]
 [Authorize]
-public class OrdersController(OrderService orders, EtaService eta) : ControllerBase
+public class OrdersController(OrderService orders, EtaService eta, DeliveryService delivery) : ControllerBase
 {
     [HttpGet("eta")]
     public async Task<ActionResult<EtaResponse>> EstimateEta(
@@ -62,6 +62,31 @@ public class OrdersController(OrderService orders, EtaService eta) : ControllerB
     [Authorize(Roles = Roles.DispatchStaff)]
     public async Task<ActionResult<OrderResponse>> Reject(Guid id, RejectRequest request, CancellationToken ct) =>
         Ok(OrderResponse.From(await orders.RejectAsync(User.UserId(), id, request.Reason, ct)));
+
+    [HttpPost("{id:guid}/schedule")]
+    [Authorize(Roles = Roles.DispatchStaff)]
+    public async Task<ActionResult<OrderResponse>> Schedule(Guid id, ScheduleRequest request, CancellationToken ct) =>
+        Ok(OrderResponse.From(await delivery.ScheduleAsync(User.UserId(), id, request.DroneId, request.ScheduledAtUtc, ct)));
+
+    [HttpPost("{id:guid}/start")]
+    [Authorize(Roles = Roles.DispatchStaff)]
+    public async Task<ActionResult<OrderResponse>> Start(Guid id, CancellationToken ct) =>
+        Ok(OrderResponse.From(await delivery.StartAsync(User.UserId(), id, ct)));
+
+    [HttpPost("{id:guid}/arrive")]
+    [Authorize(Roles = Roles.OperationsStaff)]
+    public async Task<ActionResult<OrderResponse>> Arrive(Guid id, CancellationToken ct) =>
+        Ok(OrderResponse.From(await delivery.ArriveAsync(User.UserId(), id, ct)));
+
+    [HttpPost("{id:guid}/confirm")]
+    [Authorize(Roles = Roles.OperationsStaff)]
+    public async Task<ActionResult<OrderResponse>> Confirm(Guid id, ConfirmRequest request, CancellationToken ct) =>
+        Ok(OrderResponse.From(await delivery.ConfirmAsync(User.UserId(), id, request.Otp, ct)));
+
+    [HttpPost("{id:guid}/fail")]
+    [Authorize(Roles = Roles.DispatchStaff)]
+    public async Task<ActionResult<OrderResponse>> Fail(Guid id, FailRequest request, CancellationToken ct) =>
+        Ok(OrderResponse.From(await delivery.FailAsync(User.UserId(), id, request.Reason, ct)));
 
     [HttpGet("{id:guid}/history")]
     public async Task<ActionResult<IReadOnlyList<OrderStatusHistoryResponse>>> GetHistory(Guid id, CancellationToken ct) =>

@@ -11,7 +11,10 @@ Quy ước:
 |---|---|---|
 | `AuthSchemas.cs` | `RegisterRequest` (email, mật khẩu ≥ 8, họ tên), `LoginRequest`, `AuthResponse` (token, `expiresAtUtc`, `userId`, email, `fullName`, roles), `MeResponse` | `AuthController` |
 | `StationSchemas.cs` | `StationRequest` (tên ≤ 200, vĩ độ −90..90, kinh độ −180..180, trạng thái), `StationResponse` | `StationsController` |
-| `OrderSchemas.cs` | `OrderRequest` + `PackageInput` (dùng chung cho tạo và sửa đơn), `NoteRequest`, `RejectRequest`, `OrderResponse`, `OrderSummaryResponse`, `OrderPageResponse`, `OrderStatusHistoryResponse`, `EtaResponse` | `OrdersController` |
+| `OrderSchemas.cs` | `OrderRequest` + `PackageInput` (dùng chung cho tạo và sửa đơn), `NoteRequest`, `RejectRequest`, `ScheduleRequest`, `ConfirmRequest` (OTP đúng 6 chữ số), `FailRequest`, `OrderResponse`, `OrderSummaryResponse`, `OrderPageResponse`, `OrderStatusHistoryResponse`, `EtaResponse` | `OrdersController` |
+| `UserSchemas.cs` | `CreateUserRequest`, `SetRolesRequest`, `SetActiveRequest`, `UserResponse` | `UsersController` |
+| `NotificationSchemas.cs` | `NotificationResponse` | `NotificationsController` |
+| `ReportSchemas.cs` | `ReportResponse` | `ReportsController` |
 | `DroneSchemas.cs` | `DroneRequest` (mã ≤ 30, model ≤ 100, tải 0.1–50 kg, tầm 0.1–500 km, vận tốc 1–200 km/h, pin 0–100, trạng thái, trạm hiện tại), `DroneResponse` | `DronesController` |
 | `CustomerAddressSchemas.cs` | `CustomerAddressRequest` (nhãn ≤ 50, địa chỉ ≤ 255, tọa độ tùy chọn, `isDefault`), `CustomerAddressResponse` | `CustomerAddressesController` |
 | `AiSchemas.cs` | `PromptRequest`, `ChatRequest`, `PromptResponse` (model, prompt, answer, `latencyMs`, usage), `ChatResponse` | `AiController` |

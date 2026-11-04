@@ -22,6 +22,7 @@ Lõi nghiệp vụ (tương đương `src/domain` của repo mẫu). Chỉ có c
 | `Roles.Staff` | Dispatcher, Manager, Admin | `User.IsStaff()`: được xem mọi đơn |
 | `OrderStatus` | Pending, Approved, Rejected, Scheduled, InTransit, ArrivedAtStation, Completed, Failed, Cancelled | Trạng thái đơn (lưu dạng chuỗi, CSDL có check constraint cùng danh sách) |
 | `StationStatus` | Available, Occupied, Maintenance | Trạng thái trạm |
+| `FlightStatus` | Scheduled, Flying, Landed, Aborted | Trạng thái chuyến bay (`drone_flights`) |
 | `DroneStatus` | Idle, Assigned, InFlight, Charging, Maintenance | Trạng thái drone |
 
 Thêm trạng thái mới phải sửa **cả** enum ở đây **và** check constraint trong `Infrastructure/Models/*Configuration.cs`, rồi tạo migration.
