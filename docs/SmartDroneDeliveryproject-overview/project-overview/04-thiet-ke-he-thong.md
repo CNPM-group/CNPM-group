@@ -1,4 +1,101 @@
-M[Quản lý] -->|Yêu cầu báo cáo| SYS
+
+# PHẦN 4. THIẾT KẾ HỆ THỐNG
+
+## 4.1. Kiến trúc tổng thể
+
+SmartDroneDelivery được định hướng theo kiến trúc Client–Server. Web và Mobile gửi yêu cầu đến Backend API. Backend xử lý nghiệp vụ, xác thực, phân quyền và trao đổi dữ liệu với PostgreSQL.
+
+```mermaid
+flowchart TB
+    U[Người dùng] --> W[ReactJS Web]
+    U --> M[Flutter Mobile]
+    W --> API[ASP.NET Core Web API]
+    M --> API
+    API --> DB[(PostgreSQL)]
+    API --> RT[SignalR]
+    API --> AI[Dịch vụ AI]
+```
+
+**Hình 4.1. Kiến trúc tổng thể hệ thống**
+
+## 4.2. Thiết kế Use Case
+
+Các tác nhân chính:
+- Customer.
+- Dispatcher.
+- Station Operator.
+- Logistics Manager.
+- System Administrator.
+
+```mermaid
+flowchart LR
+    C[Customer] --> A((Đăng nhập))
+    C --> B((Tạo đơn hàng))
+    C --> D((Theo dõi đơn))
+    C --> E((Xem kết quả giao))
+    P[Dispatcher] --> F((Duyệt đơn))
+    P --> G((Phân công đơn))
+    S[Station Operator] --> H((Cập nhật tiến trình))
+    S --> I((Xác nhận giao hàng))
+    L[Logistics Manager] --> J((Xem báo cáo))
+    AD[Administrator] --> K((Quản lý tài khoản))
+```
+
+**Hình 4.2. Sơ đồ Use Case tổng quát**
+
+Lưu ý: Sơ đồ trên mô tả các nhóm chức năng chính. Khi hoàn thiện báo cáo, nhóm có thể tách thành các sơ đồ Use Case chi tiết theo từng tác nhân.
+
+## 4.3. Thiết kế Activity Diagram
+
+### 4.3.1. Quy trình tạo và xử lý đơn hàng
+
+```mermaid
+flowchart TD
+    A([Bắt đầu]) --> B[Khách hàng nhập thông tin đơn]
+    B --> C[Hệ thống kiểm tra dữ liệu]
+    C --> D{Dữ liệu hợp lệ?}
+    D -- Không --> E[Thông báo lỗi]
+    E --> B
+    D -- Có --> F[Lưu đơn hàng]
+    F --> G[Nhân viên điều phối kiểm tra]
+    G --> H{Duyệt đơn?}
+    H -- Không --> I[Thông báo từ chối]
+    H -- Có --> J[Phân công giao hàng]
+    J --> K([Kết thúc])
+```
+
+**Hình 4.3. Activity Diagram quy trình xử lý đơn hàng**
+
+### 4.3.2. Quy trình giao hàng
+
+```mermaid
+flowchart TD
+    A([Bắt đầu]) --> B[Tiếp nhận đơn đã phân công]
+    B --> C[Thực hiện giao hàng]
+    C --> D[Cập nhật trạng thái]
+    D --> E{Giao thành công?}
+    E -- Có --> F[Ghi nhận xác nhận giao]
+    E -- Không --> G[Ghi nhận lý do thất bại]
+    F --> H[Lưu lịch sử giao hàng]
+    G --> H
+    H --> I([Kết thúc])
+```
+
+**Hình 4.4. Activity Diagram quy trình giao hàng**
+
+## 4.4. Thiết kế DFD
+
+### 4.4.1. DFD mức ngữ cảnh
+
+```mermaid
+flowchart LR
+    C[Khách hàng] -->|Thông tin và yêu cầu giao hàng| SYS((SmartDroneDelivery))
+    SYS -->|Trạng thái và kết quả| C
+    D[Nhân viên điều phối] -->|Duyệt và phân công| SYS
+    SYS -->|Danh sách đơn hàng| D
+    S[Nhân viên trạm] -->|Thông tin tiến trình| SYS
+    SYS -->|Thông tin đơn được giao| S
+    M[Quản lý] -->|Yêu cầu báo cáo| SYS
     SYS -->|Báo cáo thống kê| M
     A[Quản trị viên] -->|Cấu hình và quản lý| SYS
 ```
