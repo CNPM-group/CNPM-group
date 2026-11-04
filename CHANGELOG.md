@@ -25,6 +25,8 @@ Nhánh `feature/delivery-flow`. So với v0.5, backend đi được hết vòng 
 - `docs/openapi.yaml` bổ sung các endpoint trên (27 đường dẫn).
 - README gốc: bảng chức năng, phạm vi AI thực tế, tình trạng hiện tại, hướng dẫn thử luồng giao hàng trên Swagger, bảng "thư mục nào là gì, tác dụng gì".
 - File `CHANGELOG.md` này.
+- `src/Domain/Models/OrderStateMachine.md`: bảng luật chuyển trạng thái, sơ đồ, cách thêm trạng thái mới.
+- `src/Api/Controllers/OrdersController.md`: bổ sung bảng nhanh 14 endpoint và chi tiết ETA, duyệt/từ chối, schedule, start, arrive, confirm, fail (bản cũ chỉ có tạo/sửa/hủy/xem).
 
 **Sửa**
 - Build lỗi `Duplicate 'AssemblyVersionAttribute'` trên máy còn thư mục `bin/obj` của 4 project cũ → `SmartDrone.csproj` bỏ qua `**/bin/**`, `**/obj/**`.

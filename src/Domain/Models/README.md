@@ -29,7 +29,7 @@ Model là class thuần, không biết mình được lưu ở đâu. Cách map 
 
 | File | Ý nghĩa |
 |---|---|
-| `OrderStateMachine.cs` | Bảng chuyển trạng thái đơn hợp lệ (khớp mục IV.3.1 của báo cáo). `CanTransition(from, to)` trả đúng/sai; `EnsureTransition` ném `ConflictException` (409) khi chuyển sai. Mọi service đổi trạng thái đơn phải gọi hàm này. |
+| `OrderStateMachine.cs` | Bảng chuyển trạng thái đơn hợp lệ (khớp mục IV.3.1 của báo cáo). `CanTransition(from, to)` trả đúng/sai; `EnsureTransition` ném `ConflictException` (409) khi chuyển sai. Mọi service đổi trạng thái đơn phải gọi hàm này. Chi tiết: [OrderStateMachine.md](OrderStateMachine.md) |
 
 ```
 Pending          → Approved | Rejected | Cancelled
