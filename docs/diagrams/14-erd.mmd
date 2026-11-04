@@ -1,0 +1,96 @@
+erDiagram
+users ||--o{ customer_addresses : "có"
+users ||--o{ delivery_orders : "đặt"
+users ||--o{ notifications : "nhận"
+users ||--o{ ai_chat_messages : "chat"
+users ||--o{ audit_logs : "thao tác"
+users ||--o{ station_operators : "trực"
+landing_stations ||--o{ station_operators : "có nhân viên"
+landing_stations ||--o{ station_routes : "điểm đi"
+landing_stations ||--o{ station_routes : "điểm đến"
+landing_stations ||--o{ drones : "đang đậu"
+landing_stations ||--o{ delivery_orders : "trạm gửi"
+landing_stations ||--o{ delivery_orders : "trạm nhận"
+packages ||--|| delivery_orders : "thuộc"
+customer_addresses |o--o{ delivery_orders : "giao tới"
+delivery_orders ||--o{ order_status_history : "lịch sử"
+delivery_orders ||--o{ drone_flights : "chặng bay"
+delivery_orders ||--o| delivery_confirmations : "OTP"
+delivery_orders |o--o{ notifications : "liên quan"
+drones ||--o{ drone_flights : "thực hiện"
+drone_flights ||--o{ flight_telemetry : "vị trí"
+users { uuid user_id PK
+  string email UK
+  string full_name
+  bool is_active }
+landing_stations { uuid station_id PK
+  string name UK
+  decimal latitude
+  decimal longitude
+  string status }
+station_routes { uuid route_id PK
+  uuid from_station_id FK
+  uuid to_station_id FK
+  decimal distance_km }
+station_operators { uuid station_id PK
+  uuid user_id PK }
+drones { uuid drone_id PK
+  string drone_code UK
+  decimal max_payload_kg
+  smallint battery_pct
+  string status
+  uuid current_station_id FK }
+packages { uuid package_id PK
+  decimal weight_kg
+  string image_key }
+customer_addresses { uuid address_id PK
+  uuid customer_id FK
+  string address_line
+  bool is_default }
+delivery_orders { uuid order_id PK
+  string tracking_code UK
+  uuid customer_id FK
+  uuid package_id FK
+  uuid origin_station_id FK
+  uuid destination_station_id FK
+  string status
+  timestamptz eta
+  string failure_reason }
+order_status_history { bigint history_id PK
+  uuid order_id FK
+  string from_status
+  string to_status
+  uuid changed_by }
+drone_flights { uuid flight_id PK
+  uuid order_id FK
+  uuid drone_id FK
+  smallint leg_index
+  string flight_status }
+flight_telemetry { bigint telemetry_id PK
+  uuid flight_id FK
+  decimal latitude
+  decimal longitude
+  smallint battery_pct }
+delivery_confirmations { uuid confirmation_id PK
+  uuid order_id FK
+  string code_hash
+  timestamptz expires_at
+  smallint failed_attempts }
+notifications { uuid notification_id PK
+  uuid user_id FK
+  uuid order_id FK
+  string title
+  bool is_read }
+audit_logs { bigint audit_id PK
+  uuid user_id FK
+  string action
+  jsonb old_values
+  jsonb new_values }
+ai_chat_messages { uuid message_id PK
+  uuid user_id FK
+  string sender
+  string content }
+api_keys { uuid api_key_id PK
+  string name
+  string key_hash
+  bool is_active }

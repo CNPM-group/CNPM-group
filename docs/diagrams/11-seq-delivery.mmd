@@ -1,0 +1,36 @@
+sequenceDiagram
+autonumber
+actor D as Dispatcher (web)
+actor O as Station Operator
+actor K as Customer (app)
+participant API as OrdersController
+participant S as DeliveryService
+participant SM as OrderStateMachine
+participant DB as PostgreSQL
+D->>API: POST /orders/{id}/approve
+API->>SM: Pending -> Approved
+API->>DB: lưu đơn + lịch sử
+D->>API: POST /orders/{id}/schedule {droneId}
+API->>S: ScheduleAsync
+S->>SM: Approved -> Scheduled
+S->>DB: drone Idle? chở nổi kiện? tạo drone_flights, drone Assigned, ETA
+D->>API: POST /orders/{id}/start
+API->>S: StartAsync
+S->>SM: Scheduled -> InTransit
+S->>DB: chuyến Flying, drone InFlight, thông báo khách
+O->>API: POST /orders/{id}/arrive
+API->>S: ArriveAsync
+S->>SM: InTransit -> ArrivedAtStation
+S->>DB: chuyến Landed, drone Idle tại trạm nhận, lưu hash OTP (hạn 24h), thông báo có OTP
+K->>API: GET /notifications
+API-->>K: "Mã nhận hàng: 123456"
+K->>O: đọc mã OTP tại trạm
+O->>API: POST /orders/{id}/confirm {otp}
+API->>S: ConfirmAsync
+alt sai OTP (tối đa 5 lần)
+  S-->>O: 400 còn N lần thử
+else đúng OTP
+  S->>SM: ArrivedAtStation -> Completed
+  S->>DB: VerifiedAt, CompletedAt, thông báo "Giao hàng thành công"
+  S-->>O: 200 Completed
+end

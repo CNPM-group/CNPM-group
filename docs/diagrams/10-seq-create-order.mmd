@@ -1,0 +1,29 @@
+sequenceDiagram
+autonumber
+actor K as Customer (app)
+participant C as OrdersController
+participant S as OrderService
+participant ST as StationRepository
+participant AD as CustomerAddressRepository
+participant DR as DroneRepository
+participant OR as OrderRepository
+participant DB as PostgreSQL
+K->>C: POST /api/v1/orders {trạm gửi, trạm nhận, kiện hàng}
+C->>C: Validate schema (cân nặng 0.01-50 kg, kích thước)
+C->>S: CreateAsync(customerId, order, package)
+S->>S: Trạm gửi khác trạm nhận?
+S->>ST: ExistsAsync(origin), ExistsAsync(destination)
+opt có địa chỉ giao
+  S->>AD: BelongsToAsync(addressId, customerId)
+end
+S->>DR: AnyCanCarryAsync(weightKg)
+alt sai một luật
+  S-->>C: ValidationException
+  C-->>K: 400 ProblemDetails (detail tiếng Việt)
+else hợp lệ
+  S->>OR: AddAsync(order Pending, package, history)
+  OR->>DB: INSERT packages, delivery_orders, order_status_history (1 transaction)
+  OR-->>S: ok
+  S-->>C: DeliveryOrder
+  C-->>K: 201 OrderResponse (trackingCode, status Pending)
+end

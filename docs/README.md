@@ -4,6 +4,8 @@ Tài liệu của dự án. Code nằm ở `src/`, ở đây chỉ có mô tả.
 
 | File | Nội dung | Dùng khi nào |
 |---|---|---|
+| `report/BaoCao_SmartDroneDelivery.md` | Báo cáo đồ án v0.6 (SPMP/SRS/SDD/Test/Release), đọc thẳng trên GitHub | Xem báo cáo, ôn trước khi thầy hỏi |
+| `diagrams/` | 14 sơ đồ PNG + mã Mermaid `.mmd` (ngữ cảnh, use case, kiến trúc, ERD, state machine, lớp, sequence, BPMN) – xem [diagrams/README.md](diagrams/README.md) | Chèn vào báo cáo, slide |
 | `clean-architecture.md` | 4 tầng, bảng đối chiếu Flask ↔ C#, sequence diagram PlantUML, ví dụ tạo đơn đi qua từng tầng, các bước thêm chức năng | Đọc đầu tiên trước khi code |
 | `CONVENTIONS.md` | Quy ước Git (nhánh, commit, PR), bí mật, API, code | Trước khi tạo nhánh / mở PR |
 | `openapi.yaml` | Hợp đồng API v1 (endpoint, request, response, mã lỗi) | Web/mobile code theo file này; mở bằng https://editor.swagger.io |
@@ -25,4 +27,4 @@ Tài liệu của dự án. Code nằm ở `src/`, ở đây chỉ có mô tả.
 | `ai/KAN18_Feasibility_Report.md` | Mẫu báo cáo thử nghiệm LLM API (KAN-18) | Điền kết quả gọi `POST /api/v1/ai/feasibility-test` |
 | `reports/KAN16_KAN17_SmartDroneDelivery.docx` | Báo cáo KAN-16, KAN-17 | Nộp / tham khảo |
 
-Báo cáo chính (SPMP/SRS/SDD/Test/Release) nằm trên Confluence của nhóm. Thay đổi qua từng lần cập nhật code: [../CHANGELOG.md](../CHANGELOG.md).
+Báo cáo chính để chỉnh sửa nằm trên Confluence của nhóm; `report/` là bản chép để đọc trên GitHub. Thay đổi qua từng lần cập nhật code: [../CHANGELOG.md](../CHANGELOG.md).

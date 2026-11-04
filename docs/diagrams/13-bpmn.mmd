@@ -1,0 +1,42 @@
+flowchart TB
+subgraph KH[Customer]
+  A([Bắt đầu]) --> B[Tạo đơn: trạm gửi, trạm nhận, kiện hàng]
+  B --> C{Hợp lệ?}
+  C -- không --> B
+  N[Nhận thông báo có OTP] --> P[Tới trạm, đọc OTP]
+  X([Kết thúc: đã nhận hàng])
+  Q[Hủy đơn khi còn Pending]
+end
+subgraph DP[Dispatcher]
+  D{Duyệt đơn?}
+  E[Từ chối, ghi lý do]
+  F[Gán drone Idle + giờ bay]
+  G[Bắt đầu chuyến]
+  H{Sự cố?}
+  J[Báo giao thất bại]
+  L{Giao lại?}
+  M([Hoàn trả, Cancelled - dự kiến])
+end
+subgraph OP[Station Operator]
+  I[Xác nhận drone tới trạm]
+  R{OTP đúng?}
+  S[Hoàn tất đơn]
+end
+subgraph HT[Hệ thống]
+  K[Sinh OTP 6 số, lưu hash, gửi thông báo]
+  T{Hết 5 lần hoặc hết hạn 24h?}
+end
+C -- có --> D
+B -.-> Q
+D -- không --> E
+D -- có --> F --> G --> H
+H -- có --> J
+H -- không --> I --> K --> N
+P --> R
+R -- đúng --> S --> X
+R -- sai --> T
+T -- chưa --> P
+T -- rồi --> J
+J --> L
+L -- có --> F
+L -- không --> M

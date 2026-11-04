@@ -6,6 +6,14 @@ Cách ghi khi mình cập nhật: thêm một mục mới lên đầu file trong
 
 ---
 
+## v0.6.1 – 05/11/2026 · Báo cáo và sơ đồ vào repo
+
+**Thêm**
+- `docs/report/BaoCao_SmartDroneDelivery.md`: bản chép báo cáo v0.6 để đọc trên GitHub (bỏ email thành viên).
+- `docs/diagrams/`: 14 sơ đồ PNG + mã Mermaid `.mmd`, có README ghi sơ đồ nào thuộc mục nào của báo cáo.
+
+---
+
 ## v0.6 – 05/11/2026 · Luồng giao hàng chạy trọn
 
 Nhánh `feature/delivery-flow`. So với v0.5, backend đi được hết vòng đời đơn thay vì dừng ở bước duyệt.

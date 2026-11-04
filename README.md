@@ -84,7 +84,7 @@ Cập nhật 05/11/2026. Chi tiết từng lần sửa: [CHANGELOG.md](CHANGELOG
 
 ```bash
     ├── .github/workflows/ci.yml      # build tự động mỗi lần push / mở PR
-    ├── docs                          # tài liệu: kiến trúc, API, CSDL, use case, AI
+    ├── docs                          # tài liệu: báo cáo (report/), sơ đồ (diagrams/), kiến trúc, API, CSDL, AI
     ├── scripts
     │   ├── run_postgres.sh           # bật PostgreSQL bằng Docker (Linux/macOS)
     │   └── run_postgres.ps1          # bật PostgreSQL bằng Docker (Windows)

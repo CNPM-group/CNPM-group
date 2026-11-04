@@ -1,0 +1,82 @@
+classDiagram
+direction TB
+namespace Api {
+  class OrdersController {
+    +Create(OrderRequest)
+    +Approve(id, NoteRequest)
+    +Reject(id, RejectRequest)
+    +Schedule(id, ScheduleRequest)
+    +Start(id)
+    +Arrive(id)
+    +Confirm(id, ConfirmRequest)
+    +Fail(id, FailRequest)
+  }
+}
+namespace Services {
+  class OrderService {
+    +CreateAsync()
+    +ApproveAsync()
+    +RejectAsync()
+    +CancelAsync()
+  }
+  class DeliveryService {
+    +ScheduleAsync()
+    +StartAsync()
+    +ArriveAsync()
+    +ConfirmAsync()
+    +FailAsync()
+  }
+  class EtaService {
+    +EstimateAsync()
+  }
+}
+namespace Domain {
+  class DeliveryOrder {
+    +Guid Id
+    +string TrackingCode
+    +string Status
+    +DateTime? EtaUtc
+  }
+  class OrderStateMachine {
+    +CanTransition(from, to)
+    +EnsureTransition(from, to)
+  }
+  class IOrderRepository {
+    <<interface>>
+  }
+  class IDroneRepository {
+    <<interface>>
+  }
+  class IDeliveryRepository {
+    <<interface>>
+  }
+  class INotificationRepository {
+    <<interface>>
+  }
+}
+namespace Infrastructure {
+  class OrderRepository
+  class DroneRepository
+  class DeliveryRepository
+  class NotificationRepository
+  class AppDbContext
+}
+OrdersController --> OrderService
+OrdersController --> DeliveryService
+DeliveryService --> EtaService
+OrderService --> IOrderRepository
+DeliveryService --> IOrderRepository
+DeliveryService --> IDroneRepository
+DeliveryService --> IDeliveryRepository
+DeliveryService --> INotificationRepository
+OrderService ..> OrderStateMachine : dùng
+DeliveryService ..> OrderStateMachine : dùng
+OrderRepository ..|> IOrderRepository
+DroneRepository ..|> IDroneRepository
+DeliveryRepository ..|> IDeliveryRepository
+NotificationRepository ..|> INotificationRepository
+OrderRepository --> AppDbContext
+DroneRepository --> AppDbContext
+DeliveryRepository --> AppDbContext
+NotificationRepository --> AppDbContext
+IOrderRepository ..> DeliveryOrder : trả về

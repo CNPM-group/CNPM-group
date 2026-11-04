@@ -1,0 +1,22 @@
+sequenceDiagram
+autonumber
+actor D as Dispatcher
+participant API as OrdersController
+participant S as DeliveryService
+participant SM as OrderStateMachine
+participant DB as PostgreSQL
+actor K as Customer
+D->>API: POST /orders/{id}/fail {reason}
+API->>S: FailAsync(reason)
+S->>SM: InTransit/ArrivedAtStation -> Failed
+S->>DB: FailureReason, chuyến đang bay -> Aborted, drone -> Idle
+S->>DB: thông báo khách
+DB-->>K: "Giao hàng thất bại: lý do..."
+alt giao lại
+  D->>API: POST /orders/{id}/schedule {droneId}
+  API->>S: ScheduleAsync
+  S->>SM: Failed -> Scheduled
+  S->>DB: tạo chặng bay mới (leg_index + 1)
+else hoàn trả
+  D->>API: hoàn trả, Failed -> Cancelled [dự kiến]
+end
