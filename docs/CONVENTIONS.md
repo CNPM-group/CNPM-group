@@ -13,11 +13,14 @@
 - Prefix `/api/v1/...`, tên resource số nhiều, chữ thường: `/stations`, `/orders`.
 - Lỗi trả về dạng ProblemDetails (RFC 7807).
 - Enum trả về dạng chuỗi (`"Available"`), thời gian dạng UTC ISO-8601.
-- Phân quyền bằng `[Authorize(Roles = ...)]`, hằng số role nằm trong `Roles.cs`.
+- Phân quyền bằng `[Authorize(Roles = ...)]`, hằng số role nằm trong `src/Domain/Constants.cs`.
 
-## Thêm một module mới (làm theo mẫu Stations)
-1. Entity trong `Domain/Entities`, enum trong `Domain/Enums`.
-2. Thêm `DbSet` vào `IAppDbContext` và `AppDbContext`, tạo `IEntityTypeConfiguration` trong `Persistence/Configurations`.
-3. DTO + `IXxxService` + `XxxService` trong `Application/Xxx`, đăng ký trong `Application/DependencyInjection.cs`.
-4. `XxxController` trong `Api/Controllers`.
-5. `dotnet ef migrations add <Tên>` rồi commit migration.
+## Code
+- Làm đúng 4 tầng: `Api` → `Services` → `Domain` (interface) ← `Infrastructure`. Xem [clean-architecture.md](clean-architecture.md).
+- Controller không chứa nghiệp vụ, không gọi `AppDbContext`. Service không gọi `AppDbContext`, chỉ gọi interface `I*Repository`.
+- Sai luật nghiệp vụ thì ném exception trong `Domain/Exceptions.cs`, không tự `return BadRequest(...)` trong controller.
+- Comment trong code ít thôi; giải thích để ở `README.md` của thư mục hoặc file `.md` cùng tên.
+- Sửa/thêm file nào thì cập nhật `README.md` của thư mục đó trong cùng PR.
+
+## Thêm một module mới
+Làm theo mục 6 của [clean-architecture.md](clean-architecture.md).
