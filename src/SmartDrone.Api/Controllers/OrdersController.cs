@@ -13,7 +13,8 @@ namespace SmartDrone.Api.Controllers;
 [Authorize]
 public class OrdersController(
     IOrderService orders,
-    IAppDbContext db) : ControllerBase
+    IAppDbContext db,
+    IConfiguration configuration) : ControllerBase
 {
     private Guid? CurrentCustomerId
     {
@@ -25,6 +26,58 @@ public class OrdersController(
             return Guid.TryParse(value, out var id) ? id : null;
         }
     }
+    [HttpGet("eta")]
+public async Task<IActionResult> EstimateEta(
+    [FromQuery] Guid originStationId,
+    [FromQuery] Guid destinationStationId,
+    [FromQuery] decimal weightKg,
+    CancellationToken ct)
+{
+    if (originStationId == Guid.Empty || destinationStationId == Guid.Empty)
+        return BadRequest(new { message = "ID trạm không hợp lệ." });
+
+    if (weightKg is < 0.01m or > 50m)
+        return BadRequest(new { message = "Khối lượng phải từ 0.01 đến 50 kg." });
+
+    var speedKmPerHour = configuration.GetValue<double>("Eta:DroneSpeedKmPerHour");
+    var weightMinutesPerKg = configuration.GetValue<double>("Eta:WeightMinutesPerKg");
+
+    if (speedKmPerHour <= 0 || weightMinutesPerKg < 0)
+        return StatusCode(500, new { message = "Cấu hình ETA không hợp lệ." });
+
+    var origin = await db.Stations
+        .AsNoTracking()
+        .FirstOrDefaultAsync(s => s.Id == originStationId, ct);
+
+    var destination = await db.Stations
+        .AsNoTracking()
+        .FirstOrDefaultAsync(s => s.Id == destinationStationId, ct);
+
+    if (origin is null || destination is null)
+        return NotFound(new { message = "Không tìm thấy trạm đi hoặc trạm đến." });
+
+    static double ToRadians(double degrees) => degrees * Math.PI / 180.0;
+
+    var lat1 = ToRadians((double)origin.Latitude);
+    var lat2 = ToRadians((double)destination.Latitude);
+    var deltaLat = lat2 - lat1;
+    var deltaLon = ToRadians((double)(destination.Longitude - origin.Longitude));
+
+    var a = Math.Pow(Math.Sin(deltaLat / 2), 2)
+          + Math.Cos(lat1) * Math.Cos(lat2)
+          * Math.Pow(Math.Sin(deltaLon / 2), 2);
+
+    var distanceKm = 6371.0 * 2 * Math.Asin(Math.Sqrt(Math.Clamp(a, 0, 1)));
+    var estimatedMinutes =
+        distanceKm / speedKmPerHour * 60
+        + (double)weightKg * weightMinutesPerKg;
+
+    return Ok(new
+    {
+        distanceKm = Math.Round(distanceKm, 2),
+        estimatedMinutes = Math.Round(estimatedMinutes, 1)
+    });
+}
 
     [HttpPost]
     [Authorize(Roles = "Customer")]
