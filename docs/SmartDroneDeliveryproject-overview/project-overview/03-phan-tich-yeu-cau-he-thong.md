@@ -1,109 +1,120 @@
 # PHẦN 3. PHÂN TÍCH YÊU CẦU HỆ THỐNG
 
-## 3.1. Tổng quan yêu cầu
+## 3.1. Tổng quan
 
-Hệ thống SmartDroneDelivery được xây dựng nhằm hỗ trợ quản lý toàn bộ quy trình giao hàng bằng Drone. Hệ thống cần đáp ứng các yêu cầu về quản lý người dùng, khách hàng, đơn hàng, kiện hàng, trạm Drone, theo dõi giao hàng và báo cáo thống kê.
+Hệ thống SmartDroneDelivery cần đáp ứng các yêu cầu quản lý người dùng, khách hàng, đơn hàng, kiện hàng, trạm Drone, quá trình giao hàng, báo cáo và các chức năng hỗ trợ AI.
 
 ## 3.2. Yêu cầu chức năng
 
-### 3.2.1. Quản lý tài khoản
-- Đăng ký tài khoản mới.
+| Mã | Nhóm chức năng | Mô tả |
+|---|---|---|
+| FR01 | Tài khoản | Đăng ký, đăng nhập, đăng xuất |
+| FR02 | Phân quyền | Quản lý vai trò và quyền truy cập |
+| FR03 | Khách hàng | Quản lý thông tin khách hàng |
+| FR04 | Địa chỉ | Quản lý địa chỉ giao nhận |
+| FR05 | Đơn hàng | Tạo, xem, cập nhật và hủy đơn |
+| FR06 | Kiện hàng | Quản lý khối lượng và kích thước |
+| FR07 | Trạm Drone | Quản lý thông tin và trạng thái trạm |
+| FR08 | Điều phối | Duyệt và phân công đơn hàng |
+| FR09 | Theo dõi | Cập nhật trạng thái giao hàng |
+| FR10 | Xác nhận | Ghi nhận kết quả giao hàng |
+| FR11 | Báo cáo | Thống kê và tổng hợp dữ liệu |
+| FR12 | AI | Hỗ trợ dự đoán và phân tích |
+
+## 3.3. Mô tả yêu cầu chức năng
+
+### 3.3.1. Quản lý tài khoản
+- Đăng ký tài khoản.
 - Đăng nhập và đăng xuất.
 - Cập nhật thông tin cá nhân.
-- Quản lý vai trò và quyền truy cập.
-- Bảo vệ thông tin tài khoản người dùng.
+- Quản lý vai trò người dùng.
+- Kiểm tra quyền truy cập.
 
-### 3.2.2. Quản lý khách hàng
-- Thêm thông tin khách hàng.
-- Xem và cập nhật thông tin khách hàng.
-- Quản lý địa chỉ giao và nhận hàng.
+### 3.3.2. Quản lý khách hàng
+- Thêm, xem và cập nhật thông tin khách hàng.
+- Quản lý địa chỉ giao nhận.
 - Tra cứu lịch sử đơn hàng.
 
-### 3.2.3. Quản lý đơn hàng
+### 3.3.3. Quản lý đơn hàng
 - Tạo đơn hàng mới.
 - Xem danh sách và chi tiết đơn hàng.
-- Chỉnh sửa thông tin đơn hàng theo quyền hạn.
+- Chỉnh sửa thông tin theo quyền hạn.
 - Tìm kiếm và lọc đơn hàng.
-- Hủy đơn hàng theo quy định.
-- Theo dõi trạng thái xử lý đơn hàng.
+- Hủy đơn theo quy định.
 
-### 3.2.4. Quản lý kiện hàng
-- Lưu thông tin kiện hàng.
-- Quản lý khối lượng và kích thước.
+### 3.3.4. Quản lý kiện hàng
+- Quản lý mã kiện hàng.
+- Lưu khối lượng và kích thước.
 - Kiểm tra điều kiện vận chuyển.
-- Liên kết kiện hàng với đơn hàng tương ứng.
+- Liên kết kiện hàng với đơn hàng.
 
-### 3.2.5. Quản lý trạm Drone
+### 3.3.5. Quản lý trạm Drone
 - Thêm và cập nhật thông tin trạm.
-- Xem danh sách các trạm.
-- Quản lý trạng thái hoạt động của trạm.
-- Theo dõi số lượng đơn hàng tại từng trạm.
+- Xem trạng thái hoạt động.
+- Theo dõi số lượng đơn tại trạm.
+- Quản lý khả năng tiếp nhận đơn.
 
-### 3.2.6. Quản lý quá trình giao hàng
-- Tiếp nhận và phân công đơn hàng.
+### 3.3.6. Theo dõi và xác nhận giao hàng
 - Cập nhật trạng thái giao hàng.
-- Theo dõi tiến trình thực hiện.
-- Ghi nhận thời gian bắt đầu và kết thúc giao hàng.
-- Xử lý các trường hợp giao hàng thất bại.
+- Hiển thị tiến trình thực hiện.
+- Ghi nhận thời gian giao hàng.
+- Xác nhận giao thành công hoặc thất bại.
+- Lưu lịch sử xử lý.
 
-### 3.2.7. Theo dõi và xác nhận giao hàng
-- Hiển thị trạng thái đơn hàng.
-- Cập nhật dữ liệu theo thời gian thực khi có tích hợp.
-- Ghi nhận kết quả giao hàng.
-- Lưu thời gian và thông tin xác nhận.
-- Ghi nhận lý do khi giao hàng không thành công.
-
-### 3.2.8. Báo cáo và thống kê
-- Thống kê tổng số đơn hàng.
-- Thống kê đơn hàng theo trạng thái.
-- Tính tỷ lệ giao hàng thành công và thất bại.
+### 3.3.7. Báo cáo và AI
+- Thống kê đơn theo trạng thái.
+- Tính tỷ lệ giao hàng thành công.
 - Thống kê thời gian giao hàng trung bình.
-- Tổng hợp hiệu quả hoạt động theo trạm.
+- Phân tích hiệu quả hoạt động theo trạm.
+- Hỗ trợ dự đoán thời gian giao hàng khi có dữ liệu phù hợp.
 
-### 3.2.9. Chức năng hỗ trợ AI
-- Hỗ trợ dự đoán thời gian giao hàng.
-- Đề xuất phương án hoặc tuyến đường giao hàng.
-- Phân tích dữ liệu hoạt động.
-- Hỗ trợ người quản lý đưa ra quyết định dựa trên dữ liệu.
+## 3.4. Yêu cầu phi chức năng
 
-## 3.3. Yêu cầu phi chức năng
+| Mã | Yêu cầu | Mô tả |
+|---|---|---|
+| NFR01 | Bảo mật | Xác thực và phân quyền người dùng |
+| NFR02 | Hiệu năng | Truy vấn và xử lý trong thời gian hợp lý |
+| NFR03 | Ổn định | Đảm bảo dữ liệu nhất quán |
+| NFR04 | Mở rộng | Có thể bổ sung chức năng mới |
+| NFR05 | Dễ sử dụng | Giao diện rõ ràng |
+| NFR06 | Bảo trì | Mã nguồn có cấu trúc và tài liệu |
+| NFR07 | Tương thích | Hỗ trợ môi trường triển khai mục tiêu |
 
-### 3.3.1. Bảo mật
-- Xác thực người dùng khi đăng nhập.
-- Phân quyền theo từng vai trò.
-- Bảo vệ thông tin cá nhân.
-- - Sử dụng HTTPS khi triển khai thực tế.
+## 3.5. Ma trận quyền hạn đề xuất
 
-### 3.3.2. Hiệu năng
-- Hỗ trợ xử lý nhiều yêu cầu từ người dùng.
-- Tối ưu thời gian truy vấn dữ liệu.
-- Hiển thị thông tin trong thời gian hợp lý.
+| Chức năng | Customer | Dispatcher | Station Operator | Manager | Admin |
+|---|---|---|---|---|---|
+| Tạo đơn | Có | Không | Không | Có thể | Có thể |
+| Xem đơn của mình | Có | Có | Theo phân công | Có | Có |
+| Duyệt đơn | Không | Có | Không | Có thể | Có thể |
+| Phân công đơn | Không | Có | Không | Có | Có |
+| Cập nhật tiến trình | Không | Theo quyền | Có | Có thể | Có |
+| Xác nhận giao | Theo quy trình | Theo quyền | Có | Có thể | Có |
+| Xem báo cáo | Không | Theo quyền | Theo quyền | Có | Có |
+| Quản lý tài khoản | Không | Không | Không | Theo quyền | Có |
 
-### 3.3.3. Tính ổn định
-- Hạn chế lỗi trong quá trình sử dụng.
-- Đảm bảo dữ liệu được lưu trữ chính xác.
-- Có cơ chế xử lý lỗi khi kết nối API hoặc cơ sở dữ liệu gặp sự cố.
+## 3.6. Quy tắc nghiệp vụ
 
-### 3.3.4. Khả năng mở rộng
-- Có thể bổ sung chức năng mới.
-- Có thể tích hợp thêm dịch vụ bên ngoài.
-- Hỗ trợ mở rộng số lượng người dùng và trạm giao nhận.
+1. Mỗi đơn hàng phải gắn với khách hàng hợp lệ.
+2. Đơn hàng phải có thông tin người nhận và địa chỉ giao.
+3. Kiện hàng phải đáp ứng điều kiện vận chuyển.
+4. Đơn hàng cần được kiểm tra trước khi phân công.
+5. Người dùng chỉ được thực hiện chức năng phù hợp với quyền hạn.
+6. Những thay đổi trạng thái quan trọng cần được lưu lịch sử.
+7. Đơn hàng hoàn tất phải có thông tin xác nhận theo quy trình.
 
-### 3.3.5. Tính dễ sử dụng
-- Giao diện rõ ràng và dễ thao tác.
-- Các chức năng được bố trí hợp lý.
-- Có thông báo khi thao tác thành công hoặc thất bại.
+## 3.7. Điều kiện nghiệm thu đề xuất
 
-## 3.4. Quy tắc nghiệp vụ
+| Mã | Tiêu chí | Kết quả mong đợi |
+|---|---|---|
+| AC01 | Đăng nhập | Xác thực đúng tài khoản |
+| AC02 | Tạo đơn | Lưu được đơn hợp lệ |
+| AC03 | Kiểm tra dữ liệu | Từ chối dữ liệu không hợp lệ |
+| AC04 | Phân công | Ghi nhận thông tin phân công |
+| AC05 | Theo dõi | Hiển thị trạng thái mới |
+| AC06 | Xác nhận | Lưu kết quả giao hàng |
+| AC07 | Báo cáo | Tính toán đúng trên dữ liệu kiểm thử |
 
-- Mỗi đơn hàng phải có khách hàng hợp lệ.
-- Đơn hàng phải có thông tin người nhận và địa chỉ giao hàng.
-- Kiện hàng phải đáp ứng điều kiện vận chuyển.
-- Đơn hàng phải được kiểm tra trước khi phân công.
-- Chỉ người dùng có quyền hạn mới được thực hiện các thao tác quản lý.
-- Mọi thay đổi trạng thái quan trọng cần được ghi nhận.
-- Kết quả giao hàng phải được lưu trữ để phục vụ tra cứu và thống kê.
+## 3.8. Kết luận
 
-## 3.5. Kết luận
-
-Các yêu cầu trên là cơ sở để thiết kế kiến trúc, cơ sở dữ liệu, giao diện và xây dựng chức năng cho hệ thống SmartDroneDelivery. Việc xác định rõ yêu cầu giúp nhóm phát triển hệ thống đúng mục tiêu và phù hợp với nghiệp vụ thực tế.
+Các yêu cầu chức năng, phi chức năng và quy tắc nghiệp vụ là căn cứ để thiết kế hệ thống và xây dựng kế hoạch kiểm thử SmartDroneDelivery.
