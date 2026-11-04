@@ -25,4 +25,4 @@ Tài liệu của dự án. Code nằm ở `src/`, ở đây chỉ có mô tả.
 | `ai/KAN18_Feasibility_Report.md` | Mẫu báo cáo thử nghiệm LLM API (KAN-18) | Điền kết quả gọi `POST /api/v1/ai/feasibility-test` |
 | `reports/KAN16_KAN17_SmartDroneDelivery.docx` | Báo cáo KAN-16, KAN-17 | Nộp / tham khảo |
 
-Báo cáo chính (SPMP/SRS/SDD/Test/Release) nằm trên Confluence của nhóm.
+Báo cáo chính (SPMP/SRS/SDD/Test/Release) nằm trên Confluence của nhóm. Thay đổi qua từng lần cập nhật code: [../CHANGELOG.md](../CHANGELOG.md).

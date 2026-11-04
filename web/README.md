@@ -7,6 +7,8 @@ Backend phải chạy trước (`chay-thu.bat`, API ở http://localhost:5080).
 
     npx serve -l 5173 web
 
+Hoặc chạy cả hệ thống bằng `docker compose up -d --build` ở gốc repo (web được nginx phục vụ sẵn).
+
 Mở http://localhost:5173/login.html. Cổng 5173 là cổng backend cho phép (CORS).
 Nhấp đúp mở file trực tiếp thì trình duyệt sẽ chặn gọi API.
 
