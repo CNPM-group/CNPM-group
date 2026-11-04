@@ -85,3 +85,8 @@ public sealed record OrderStatusHistoryResponse(
     public static OrderStatusHistoryResponse From(OrderStatusHistory h) =>
         new(h.FromStatus, h.ToStatus, h.ChangedBy, h.Note, h.ChangedAtUtc);
 }
+
+public sealed record EtaResponse(double DistanceKm, double EstimatedMinutes)
+{
+    public static EtaResponse From(EtaEstimate e) => new(e.DistanceKm, e.EstimatedMinutes);
+}

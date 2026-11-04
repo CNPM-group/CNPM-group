@@ -39,6 +39,7 @@ public static class DependencyContainer
         services.AddScoped<OrderService>();
         services.AddScoped<CustomerAddressService>();
         services.AddScoped<AiService>();
+        services.AddScoped<EtaService>();
 
         return services;
     }

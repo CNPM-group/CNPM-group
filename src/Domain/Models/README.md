@@ -47,6 +47,7 @@ Rejected, Completed, Cancelled: trạng thái cuối
 |---|---|
 | `AuthSession.cs` | Kết quả đăng nhập/đăng ký: token, hạn, user, roles |
 | `OrderSummary.cs` | Dòng tóm tắt đơn cho danh sách (kèm tên trạm) + `PagedResult<T>` cho phân trang |
+| `EtaEstimate.cs` | Kết quả ước tính ETA (km, phút) + `GeoDistance.HaversineKm` tính khoảng cách 2 tọa độ trên mặt cầu |
 | `AiAnswer.cs` | Câu trả lời của LLM: model, nội dung, độ trễ, token usage |
 
 ## Interface (Infrastructure cài đặt)

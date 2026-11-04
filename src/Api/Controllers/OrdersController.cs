@@ -9,8 +9,16 @@ namespace SmartDrone.Api.Controllers;
 [ApiController]
 [Route(ApiConstants.Prefix + "/orders")]
 [Authorize]
-public class OrdersController(OrderService orders) : ControllerBase
+public class OrdersController(OrderService orders, EtaService eta) : ControllerBase
 {
+    [HttpGet("eta")]
+    public async Task<ActionResult<EtaResponse>> EstimateEta(
+        [FromQuery] Guid originStationId,
+        [FromQuery] Guid destinationStationId,
+        [FromQuery] decimal weightKg,
+        CancellationToken ct) =>
+        Ok(EtaResponse.From(await eta.EstimateAsync(originStationId, destinationStationId, weightKg, ct)));
+
     [HttpPost]
     [Authorize(Roles = Roles.Customer)]
     public async Task<ActionResult<OrderResponse>> Create(OrderRequest request, CancellationToken ct)

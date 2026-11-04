@@ -16,6 +16,12 @@ public sealed class LlmOptions
     public int TimeoutSeconds { get; set; } = 30;
 }
 
+public sealed class EtaOptions
+{
+    public double DroneSpeedKmPerHour { get; set; } = 40;
+    public double WeightMinutesPerKg { get; set; } = 0.5;
+}
+
 public static class Config
 {
     public const string AuthCookie = "smartdrone_auth";
@@ -26,6 +32,7 @@ public static class Config
 
         builder.Services.Configure<JwtOptions>(config.GetSection("Jwt"));
         builder.Services.Configure<LlmOptions>(config.GetSection("Llm"));
+        builder.Services.Configure<EtaOptions>(config.GetSection("Eta"));
 
         var jwt = config.GetSection("Jwt").Get<JwtOptions>() ?? new JwtOptions();
         if (string.IsNullOrWhiteSpace(jwt.Key) || jwt.Key.Length < 32)

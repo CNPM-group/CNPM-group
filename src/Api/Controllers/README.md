@@ -28,6 +28,7 @@ Chi tiết từng endpoint: [OrdersController.md](OrdersController.md)
 
 | Method | Path | Quyền | Mô tả |
 |---|---|---|---|
+| GET | `/eta?originStationId=&destinationStationId=&weightKg=` | Đã đăng nhập | Ước tính khoảng cách (km) và thời gian giao (phút) trước khi tạo đơn |
 | POST | `/` | Customer | Tạo đơn + kiện hàng, trạng thái `Pending` |
 | GET | `/?page=&pageSize=&status=` | Đã đăng nhập | Phân trang. Khách thấy đơn của mình, nhân viên thấy tất cả |
 | GET | `/{id}` | Đã đăng nhập | Chi tiết đơn |

@@ -19,7 +19,7 @@ Toàn bộ backend, một project ASP.NET Core 8 (`SmartDrone.csproj`). Bốn th
 |---|---|---|---|
 | `Program.cs` | `app.py` | Điểm vào: gọi `CreateApp.BuildAsync(args)` rồi `app.Run()`. Chỉ 3 dòng. | Gần như không bao giờ |
 | `CreateApp.cs` | `create_app.py` | Dựng app theo thứ tự: log → config → DI → JWT → CORS → controller → error handler → health check → Swagger; rồi gắn middleware, seed CSDL (Development), map route. Chi tiết: [CreateApp.md](CreateApp.md) | Thêm middleware / thay đổi pipeline |
-| `Config.cs` | `config.py` | Class cấu hình `JwtOptions`, `LlmOptions`; hàm `AddAppConfig` đọc section `Jwt`, `Llm` và **dừng app ngay** nếu thiếu `Jwt:Key` (≥ 32 ký tự) hoặc `ConnectionStrings:Default`. | Thêm nhóm cấu hình mới |
+| `Config.cs` | `config.py` | Class cấu hình `JwtOptions`, `LlmOptions`, `EtaOptions`; hàm `AddAppConfig` đọc section `Jwt`, `Llm`, `Eta` và **dừng app ngay** nếu thiếu `Jwt:Key` (≥ 32 ký tự) hoặc `ConnectionStrings:Default`. | Thêm nhóm cấu hình mới |
 | `Cors.cs` | `cors.py` | Policy `web`: cho phép origin trong `Cors:Origins` (mặc định `http://localhost:5173`) gọi API, có gửi cookie. | Web chạy ở cổng/khác domain |
 | `DependencyContainer.cs` | `dependency_container.py` | Đăng ký DbContext, Identity, repository (interface → class), JWT, LLM client, service. Chi tiết: [DependencyContainer.md](DependencyContainer.md) | Mỗi lần thêm repository / service |
 | `ErrorHandler.cs` | `error_handler.py` | Bắt mọi exception, đổi thành ProblemDetails (RFC 7807). Chi tiết: [ErrorHandler.md](ErrorHandler.md) | Thêm loại exception mới |
