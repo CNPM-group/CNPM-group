@@ -214,18 +214,6 @@ Các màn hình dự kiến:
 - Xác nhận giao hàng.
 - Báo cáo và thống kê.
 
-### Hình ảnh giao diện Figma
-
-Sau khi tải ảnh từ Figma lên thư mục `images`, sử dụng các đường dẫn dưới đây:
-
-![Hình 4.8. Giao diện đăng nhập](images/figma-login.png)
-
-![Hình 4.9. Giao diện Dashboard](images/figma-dashboard.png)
-
-![Hình 4.10. Giao diện quản lý đơn hàng](images/figma-orders.png)
-
-![Hình 4.11. Giao diện theo dõi giao hàng](images/figma-tracking.png)
-
 ## 4.8. Thiết kế bảo mật
 
 - Xác thực người dùng.
