@@ -27,6 +27,27 @@ services:
     volumes:
       - miniodata:/data
 
+  api:
+    build: ./src
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__Default: Host=db;Port=5432;Database=drone;Username=drone;Password=${DB_PASSWORD}
+      Jwt__Key: ${JWT_KEY:-dev-only-secret-key-change-me-min-32-chars!!}
+      Llm__ApiKey: ${LLM_API_KEY:-}
+      Cors__Origins__0: http://localhost:5173
+    ports:
+      - "5080:8080"
+
+  web:
+    image: nginx:alpine
+    volumes:
+      - ./web:/usr/share/nginx/html:ro
+    ports:
+      - "5173:80"
+
 volumes:
   pgdata:
   miniodata:

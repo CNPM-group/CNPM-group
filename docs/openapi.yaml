@@ -14,7 +14,7 @@ info:
     - Danh sách có phân trang: `page` (từ 1), `pageSize` (mặc định 20, tối đa 100).
     - Đi sai luật chuyển trạng thái đơn thì trả `409 Conflict`.
 
-    **Chưa có trong v1 (làm ở W3 trở đi):** lên lịch giao, xác nhận OTP/QR, profile, drone, analytics, AI, SignalR.
+    **Đã bổ sung (04/11):** ETA, gán drone/bay/tới trạm/OTP/giao thất bại, thông báo, thống kê + CSV, quản lý tài khoản. **Chưa có:** ảnh bằng chứng giao, SignalR, AI (đang ở `/ai/...`).
 servers:
   - url: http://localhost:5080/api/v1
     description: Local dev
@@ -24,6 +24,10 @@ tags:
   - name: Orders
   - name: Packages
   - name: Drones
+  - name: Delivery
+  - name: Notifications
+  - name: Reports
+  - name: Users
 
 security:
   - bearerAuth: []
@@ -428,6 +432,271 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
 
+  /orders/eta:
+    get:
+      tags: [Orders]
+      summary: Ước tính khoảng cách và thời gian giao trước khi tạo đơn
+      parameters:
+        - { name: originStationId, in: query, required: true, schema: { type: string, format: uuid } }
+        - { name: destinationStationId, in: query, required: true, schema: { type: string, format: uuid } }
+        - { name: weightKg, in: query, required: true, schema: { type: number, minimum: 0.01, maximum: 50 } }
+      responses:
+        '200':
+          description: Kết quả ước tính
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EtaResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /orders/{id}/schedule:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [Delivery]
+      summary: Gán drone + giờ bay (Dispatcher, Manager, Admin)
+      description: '`Approved` hoặc `Failed` → `Scheduled`. Drone phải `Idle` và chở nổi kiện.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ScheduleRequest' }
+      responses:
+        '200':
+          description: Đơn sau khi chuyển trạng thái
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Order' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /orders/{id}/start:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [Delivery]
+      summary: Bắt đầu chuyến bay (Dispatcher, Manager, Admin)
+      description: '`Scheduled` → `InTransit`.'
+      responses:
+        '200':
+          description: Đơn sau khi chuyển trạng thái
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Order' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /orders/{id}/arrive:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [Delivery]
+      summary: Drone tới trạm nhận (StationOperator, Dispatcher, Manager, Admin)
+      description: '`InTransit` → `ArrivedAtStation`. Sinh OTP 6 số, gửi vào thông báo của khách.'
+      responses:
+        '200':
+          description: Đơn sau khi chuyển trạng thái
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Order' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /orders/{id}/confirm:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [Delivery]
+      summary: Xác nhận khách nhận hàng bằng OTP (StationOperator, Dispatcher, Manager, Admin)
+      description: '`ArrivedAtStation` → `Completed`. Sai OTP → 400 (tối đa 5 lần), hết hạn → 409.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ConfirmRequest' }
+      responses:
+        '200':
+          description: Đơn sau khi chuyển trạng thái
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Order' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /orders/{id}/fail:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [Delivery]
+      summary: Giao thất bại (Dispatcher, Manager, Admin)
+      description: '`InTransit` hoặc `ArrivedAtStation` → `Failed`. Bắt buộc lý do.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/FailRequest' }
+      responses:
+        '200':
+          description: Đơn sau khi chuyển trạng thái
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Order' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /notifications:
+    get:
+      tags: [Notifications]
+      summary: Thông báo của người đang đăng nhập (khách lấy OTP ở đây)
+      parameters:
+        - { name: unreadOnly, in: query, schema: { type: boolean, default: false } }
+      responses:
+        '200':
+          description: Tối đa 100 thông báo mới nhất
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Notification' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /notifications/{id}/read:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [Notifications]
+      summary: Đánh dấu đã đọc
+      responses:
+        '200':
+          description: Thông báo sau khi đánh dấu
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Notification' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /reports/orders:
+    get:
+      tags: [Reports]
+      summary: Thống kê đơn (Admin, Manager)
+      parameters:
+        - { name: from, in: query, schema: { type: string, format: date-time } }
+        - { name: to, in: query, schema: { type: string, format: date-time } }
+      responses:
+        '200':
+          description: Mặc định 30 ngày gần nhất
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OrderReport' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /reports/orders.csv:
+    get:
+      tags: [Reports]
+      summary: Xuất CSV danh sách đơn (Admin, Manager)
+      parameters:
+        - { name: from, in: query, schema: { type: string, format: date-time } }
+        - { name: to, in: query, schema: { type: string, format: date-time } }
+      responses:
+        '200':
+          description: File CSV UTF-8
+          content:
+            text/csv: {}
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /users:
+    get:
+      tags: [Users]
+      summary: Danh sách tài khoản (Admin)
+      responses:
+        '200':
+          description: Tài khoản kèm vai trò
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/UserAdmin' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [Users]
+      summary: Tạo tài khoản nội bộ (Admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateUserRequest' }
+      responses:
+        '200':
+          description: Đã tạo
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserAdmin' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+
+  /users/{id}/roles:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    put:
+      tags: [Users]
+      summary: Gán lại vai trò (Admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [roles]
+              properties:
+                roles: { type: array, items: { $ref: '#/components/schemas/UserRole' } }
+      responses:
+        '200':
+          description: Tài khoản sau khi đổi
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserAdmin' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /users/{id}/active:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    put:
+      tags: [Users]
+      summary: Khóa/mở tài khoản (Admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [isActive]
+              properties:
+                isActive: { type: boolean }
+      responses:
+        '200':
+          description: Tài khoản sau khi đổi
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserAdmin' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
 components:
   securitySchemes:
     bearerAuth:
@@ -729,3 +998,75 @@ components:
         batteryPct: { type: integer, minimum: 0, maximum: 100, default: 100 }
         status: { $ref: '#/components/schemas/DroneStatus' }
         currentStationId: { type: string, format: uuid, nullable: true }
+
+    EtaResponse:
+      type: object
+      properties:
+        distanceKm: { type: number }
+        estimatedMinutes: { type: number }
+
+    ScheduleRequest:
+      type: object
+      required: [droneId]
+      properties:
+        droneId: { type: string, format: uuid }
+        scheduledAtUtc: { type: string, format: date-time, nullable: true, description: 'Bỏ trống = bay ngay' }
+
+    ConfirmRequest:
+      type: object
+      required: [otp]
+      properties:
+        otp: { type: string, pattern: '^[0-9]{6}$' }
+
+    FailRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason: { type: string, minLength: 1 }
+
+    Notification:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        orderId: { type: string, format: uuid, nullable: true }
+        title: { type: string }
+        body: { type: string, nullable: true }
+        isRead: { type: boolean }
+        createdAtUtc: { type: string, format: date-time }
+
+    OrderReport:
+      type: object
+      properties:
+        fromUtc: { type: string, format: date-time }
+        toUtc: { type: string, format: date-time }
+        totalOrders: { type: integer }
+        completedOrders: { type: integer }
+        failedOrders: { type: integer }
+        successRatePct: { type: number }
+        avgDeliveryMinutes: { type: number, nullable: true }
+        byStatus:
+          type: array
+          items: { type: object, properties: { status: { type: string }, count: { type: integer } } }
+        byDay:
+          type: array
+          items: { type: object, properties: { day: { type: string, format: date }, count: { type: integer } } }
+
+    CreateUserRequest:
+      type: object
+      required: [email, password, fullName, role]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 8 }
+        fullName: { type: string, maxLength: 100 }
+        role: { $ref: '#/components/schemas/UserRole' }
+
+    UserAdmin:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string }
+        fullName: { type: string }
+        phone: { type: string, nullable: true }
+        isActive: { type: boolean }
+        createdAtUtc: { type: string, format: date-time }
+        roles: { type: array, items: { $ref: '#/components/schemas/UserRole' } }

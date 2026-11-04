@@ -62,10 +62,14 @@ flutter test
 | `pages/orders_page.dart` | Danh sách đơn của khách (`GET /orders`), bấm vào xem chi tiết, nút tạo đơn |
 | `pages/create_order_page.dart` | Tạo đơn: chọn trạm gửi/nhận, nhập cân nặng + kích thước, chọn ảnh kiện |
 | `pages/order_detail_page.dart` | Chi tiết đơn + timeline (`/orders/{id}/history`), nút hủy khi `Pending` |
-
 | `services/signalr_service.dart` | Kết nối SignalR hub (`signalr_netcore`), đẩy sự kiện nhận được ra `Stream` `updates` |
 | `services/signalr_config.dart` | URL hub = gốc của `apiBaseUrl` + `/hubs/delivery`, sự kiện `OrderStatusUpdated` |
 
 Backend **chưa có** SignalR hub `/hubs/delivery`, nên `SignalRService.connect` hiện sẽ lỗi kết nối cho tới khi làm xong hub. Khi có hub thì nối vào `order_detail_page.dart` để timeline tự cập nhật (KAN-61).
 
-`test/widget_test.dart`: test mẫu của Flutter.
+`test/widget_test.dart`: test hàm `statusLabel` (mã trạng thái → nhãn tiếng Việt).
+
+## Lỗi đã biết
+
+- Chọn ảnh kiện khi tạo đơn sẽ báo lỗi: app gọi `POST /packages/images` nhưng backend chưa có API này (KAN-33, Vinh). Tạm thời tạo đơn **không kèm ảnh**.
+- Chưa có màn thông báo để khách xem mã OTP nhận hàng (`GET /notifications`) và màn sổ địa chỉ (`/customers/me/addresses`) – KAN-47, KAN-67.

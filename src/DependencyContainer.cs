@@ -30,6 +30,9 @@ public static class DependencyContainer
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<ICustomerAddressRepository, CustomerAddressRepository>();
         services.AddScoped<IDroneRepository, DroneRepository>();
+        services.AddScoped<IDeliveryRepository, DeliveryRepository>();
+        services.AddScoped<INotificationRepository, NotificationRepository>();
+        services.AddScoped<IReportRepository, ReportRepository>();
 
         services.AddScoped<ITokenService, JwtTokenService>();
         services.AddHttpClient<ILlmClient, LlmClient>();
@@ -41,6 +44,10 @@ public static class DependencyContainer
         services.AddScoped<AiService>();
         services.AddScoped<EtaService>();
         services.AddScoped<DroneService>();
+        services.AddScoped<DeliveryService>();
+        services.AddScoped<NotificationService>();
+        services.AddScoped<ReportService>();
+        services.AddScoped<UserService>();
 
         return services;
     }

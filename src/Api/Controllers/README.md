@@ -37,6 +37,13 @@ Chi tiết từng endpoint: [OrdersController.md](OrdersController.md)
 | POST | `/{id}/approve` | Dispatcher, Manager, Admin | Duyệt đơn `Pending` → `Approved`, body `{ "note" }` không bắt buộc |
 | POST | `/{id}/reject` | Dispatcher, Manager, Admin | Từ chối đơn `Pending` → `Rejected`, bắt buộc `{ "reason" }` |
 | GET | `/{id}/history` | Đã đăng nhập | Lịch sử chuyển trạng thái (timeline) |
+| POST | `/{id}/schedule` | Dispatcher, Manager, Admin | Gán drone + giờ bay: `Approved`/`Failed` → `Scheduled`. Body `{ "droneId", "scheduledAtUtc"? }` |
+| POST | `/{id}/start` | Dispatcher, Manager, Admin | Cất cánh: `Scheduled` → `InTransit` |
+| POST | `/{id}/arrive` | StationOperator, Dispatcher, Manager, Admin | Hạ cánh tại trạm nhận: `InTransit` → `ArrivedAtStation`, sinh OTP gửi vào thông báo của khách |
+| POST | `/{id}/confirm` | StationOperator, Dispatcher, Manager, Admin | Nhập OTP khách đọc: `ArrivedAtStation` → `Completed`. Body `{ "otp": "123456" }` |
+| POST | `/{id}/fail` | Dispatcher, Manager, Admin | Giao thất bại: `InTransit`/`ArrivedAtStation` → `Failed`. Body `{ "reason" }` |
+
+Luồng giao trọn vẹn để demo: `POST /orders` (khách) → `approve` → `schedule` → `start` → `arrive` → khách xem OTP ở `GET /notifications` → `confirm`. Chi tiết: [../../Services/DeliveryService.md](../../Services/DeliveryService.md)
 
 ## DronesController.cs – `/api/v1/drones`
 
@@ -47,6 +54,31 @@ Chi tiết từng endpoint: [OrdersController.md](OrdersController.md)
 | POST | `/` | Admin, Manager | Thêm drone. Trùng mã → 409, trạm hiện tại không tồn tại → 400 |
 | PUT | `/{id}` | Admin, Manager | Sửa drone |
 | DELETE | `/{id}` | Admin, Manager | Xóa. Drone đang `Assigned`/`InFlight` → 409 |
+
+## NotificationsController.cs – `/api/v1/notifications`
+
+| Method | Path | Quyền | Mô tả |
+|---|---|---|---|
+| GET | `/?unreadOnly=` | Đã đăng nhập | Thông báo của chính mình, mới nhất trước (tối đa 100). Khách lấy mã OTP nhận hàng ở đây |
+| POST | `/{id}/read` | Đã đăng nhập | Đánh dấu đã đọc |
+
+## ReportsController.cs – `/api/v1/reports`
+
+| Method | Path | Quyền | Mô tả |
+|---|---|---|---|
+| GET | `/orders?from=&to=` | Admin, Manager | Tổng đơn, số hoàn thành/thất bại, tỷ lệ thành công, thời gian giao trung bình (phút), số đơn theo trạng thái và theo ngày. Mặc định 30 ngày gần nhất |
+| GET | `/orders.csv?from=&to=` | Admin, Manager | Tải file CSV danh sách đơn (UTF-8, mở được bằng Excel) |
+
+## UsersController.cs – `/api/v1/users`
+
+Chỉ Admin.
+
+| Method | Path | Mô tả |
+|---|---|---|
+| GET | `/` | Danh sách tài khoản kèm vai trò |
+| POST | `/` | Tạo tài khoản nội bộ `{ email, password, fullName, role }` |
+| PUT | `/{id}/roles` | Gán lại vai trò `{ "roles": ["Dispatcher"] }`. Không tự gỡ quyền Admin của mình |
+| PUT | `/{id}/active` | Khóa/mở tài khoản `{ "isActive": false }`. Tài khoản bị khóa đăng nhập sẽ nhận 403. Không tự khóa mình |
 
 ## CustomerAddressesController.cs – `/api/v1/customers/me/addresses`
 

@@ -11,6 +11,10 @@ Service **không** biết HTTP (không có `IActionResult`, không đọc header
 | `OrderService.cs` | `IOrderRepository`, `IStationRepository`, `ICustomerAddressRepository`, `IDroneRepository` | Tạo, sửa, hủy, duyệt, từ chối, xem, phân trang, lịch sử đơn | [OrderService.md](OrderService.md) |
 | `CustomerAddressService.cs` | `ICustomerAddressRepository` | CRUD địa chỉ của khách | bên dưới |
 | `DroneService.cs` | `IDroneRepository`, `IStationRepository` | CRUD drone; mã drone không trùng, trạm hiện tại phải tồn tại, không xóa drone đang gán/đang bay | bên dưới |
+| `DeliveryService.cs` | `IOrderRepository`, `IDroneRepository`, `IDeliveryRepository`, `INotificationRepository`, `EtaService` | Luồng giao: gán drone, cất cánh, tới trạm + sinh OTP, xác nhận OTP, giao thất bại | [DeliveryService.md](DeliveryService.md) |
+| `NotificationService.cs` | `INotificationRepository` | Xem và đánh dấu đã đọc thông báo của người đang đăng nhập | |
+| `UserService.cs` | `IUserRepository` | Admin quản lý tài khoản: liệt kê, tạo tài khoản nội bộ, gán vai trò (chỉ nhận 5 vai trò hợp lệ, không phân biệt hoa thường), khóa/mở. Chặn Admin tự gỡ quyền hoặc tự khóa mình | |
+| `ReportService.cs` | `IReportRepository` | Thống kê đơn theo khoảng ngày + xuất CSV | bên dưới |
 | `EtaService.cs` | `IStationRepository`, `EtaOptions` | Ước tính ETA trước khi tạo đơn: khoảng cách Haversine giữa 2 trạm ÷ vận tốc drone + phút cộng thêm theo cân nặng (KAN-53, công thức của Tài) | bên dưới |
 | `AiService.cs` | `ILlmClient`, `OrderService`, `StationService` | Hỏi LLM 1 câu; chatbot có gọi tool tra đơn/trạm/ETA | [AiService.md](AiService.md) |
 
@@ -35,6 +39,11 @@ phút = khoảng_cách_km / Eta:DroneSpeedKmPerHour × 60 + weightKg × Eta:Weig
 ```
 
 Mặc định 40 km/h và 0.5 phút/kg (`appsettings.json`, section `Eta`). Id trạm rỗng hoặc cân nặng ngoài 0.01–50 kg → 400; không thấy trạm → 404. Khoảng cách tính bằng `GeoDistance.HaversineKm` ở `Domain/Models/EtaEstimate.cs`.
+
+## ReportService.cs
+
+- `SummaryAsync(from, to)`: mặc định 30 ngày gần nhất, tối đa 366 ngày. Tỷ lệ thành công = hoàn thành ÷ (hoàn thành + thất bại). Thời gian giao = `completed_at − created_at`.
+- `ExportCsvAsync`: cột `tracking_code, status, origin_station, destination_station, weight_kg, created_at_utc, completed_at_utc, failure_reason`; ô có dấu phẩy/ngoặc kép được bọc đúng chuẩn CSV.
 
 ## CustomerAddressService.cs
 

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using SmartDrone.Domain;
 using SmartDrone.Domain.Models;
 using SmartDrone.Infrastructure.Models;
@@ -11,6 +12,37 @@ public sealed class UserRepository(UserManager<AppUser> users) : IUserRepository
     {
         var entity = await users.FindByEmailAsync(email);
         return entity is null ? null : ToDomain(entity);
+    }
+
+    public async Task<User?> GetByIdAsync(Guid userId)
+    {
+        var entity = await users.FindByIdAsync(userId.ToString());
+        return entity is null ? null : ToDomain(entity);
+    }
+
+    public async Task<IReadOnlyList<User>> ListAsync()
+    {
+        var entities = await users.Users.AsNoTracking().OrderBy(u => u.Email).ToListAsync();
+        return entities.Select(ToDomain).ToList();
+    }
+
+    public async Task SetRolesAsync(Guid userId, IReadOnlyCollection<string> roles)
+    {
+        var entity = await FindAsync(userId);
+        var current = await users.GetRolesAsync(entity);
+
+        var removed = await users.RemoveFromRolesAsync(entity, current.Except(roles));
+        EnsureSucceeded(removed);
+
+        var added = await users.AddToRolesAsync(entity, roles.Except(current));
+        EnsureSucceeded(added);
+    }
+
+    public async Task SetActiveAsync(Guid userId, bool isActive)
+    {
+        var entity = await FindAsync(userId);
+        entity.IsActive = isActive;
+        EnsureSucceeded(await users.UpdateAsync(entity));
     }
 
     public async Task<bool> CheckPasswordAsync(Guid userId, string password)
@@ -46,6 +78,15 @@ public sealed class UserRepository(UserManager<AppUser> users) : IUserRepository
             return Array.Empty<string>();
 
         return (await users.GetRolesAsync(entity)).ToList();
+    }
+
+    private async Task<AppUser> FindAsync(Guid userId) =>
+        await users.FindByIdAsync(userId.ToString()) ?? throw new NotFoundException("Không tìm thấy tài khoản.");
+
+    private static void EnsureSucceeded(IdentityResult result)
+    {
+        if (!result.Succeeded)
+            throw new ValidationException(string.Join(" ", result.Errors.Select(e => e.Description)));
     }
 
     private static User ToDomain(AppUser e) => new()

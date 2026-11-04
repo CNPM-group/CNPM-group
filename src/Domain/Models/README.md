@@ -8,7 +8,7 @@ Model là class thuần, không biết mình được lưu ở đâu. Cách map 
 
 | File | Bảng | Ý nghĩa | Đang dùng |
 |---|---|---|---|
-| `User.cs` | `users` | Người dùng ở mức nghiệp vụ (id, email, họ tên, SĐT, còn hoạt động). Bản lưu CSDL là `AppUser` ở Infrastructure | Auth |
+| `User.cs` | `users` | Người dùng ở mức nghiệp vụ (id, email, họ tên, SĐT, còn hoạt động) + record `UserWithRoles`. Bản lưu CSDL là `AppUser` ở Infrastructure | Auth, quản lý tài khoản |
 | `LandingStation.cs` | `landing_stations` | Trạm hạ cánh: tên, sức chứa (mặc định 2), tọa độ, trạng thái | Stations, Orders, AI |
 | `StationRoute.cs` | `station_routes` | Tuyến bay có hướng giữa 2 trạm, khoảng cách km | Seed (20 tuyến); dùng khi làm lập lịch |
 | `Drone.cs` | `drones` | Mã, model, tải tối đa, tầm bay, vận tốc, % pin, trạng thái, trạm hiện tại | API drone, kiểm tra tải khi tạo đơn |
@@ -29,7 +29,7 @@ Model là class thuần, không biết mình được lưu ở đâu. Cách map 
 
 | File | Ý nghĩa |
 |---|---|
-| `OrderStateMachine.cs` | Bảng chuyển trạng thái đơn hợp lệ (khớp mục IV.3.1 của báo cáo). `CanTransition(from, to)` trả đúng/sai; `EnsureTransition` ném `ConflictException` (409) khi chuyển sai. Mọi service đổi trạng thái đơn phải gọi hàm này. |
+| `OrderStateMachine.cs` | Bảng chuyển trạng thái đơn hợp lệ (khớp mục IV.3.1 của báo cáo). `CanTransition(from, to)` trả đúng/sai; `EnsureTransition` ném `ConflictException` (409) khi chuyển sai. Mọi service đổi trạng thái đơn phải gọi hàm này. Chi tiết: [OrderStateMachine.md](OrderStateMachine.md) |
 
 ```
 Pending          → Approved | Rejected | Cancelled
@@ -48,17 +48,22 @@ Rejected, Completed, Cancelled: trạng thái cuối
 | `AuthSession.cs` | Kết quả đăng nhập/đăng ký: token, hạn, user, roles |
 | `OrderSummary.cs` | Dòng tóm tắt đơn cho danh sách (kèm tên trạm) + `PagedResult<T>` cho phân trang |
 | `EtaEstimate.cs` | Kết quả ước tính ETA (km, phút) + `GeoDistance.HaversineKm` tính khoảng cách 2 tọa độ trên mặt cầu |
+| `OtpCode.cs` | Sinh mã OTP 6 số ngẫu nhiên (RandomNumberGenerator), băm SHA-256 kèm id đơn, hạn 24 giờ, tối đa 5 lần sai |
+| `ReportModels.cs` | Kết quả thống kê (`OrderReport`, `StatusCount`, `DailyCount`), dòng xuất CSV, và interface `IReportRepository` |
 | `AiAnswer.cs` | Câu trả lời của LLM: model, nội dung, độ trễ, token usage |
 
 ## Interface (Infrastructure cài đặt)
 
 | Interface | Cài đặt | Hàm |
 |---|---|---|
-| `IUserRepository` | `Infrastructure/Repositories/UserRepository.cs` | tìm theo email, kiểm tra mật khẩu, tạo user + gán role, lấy roles |
+| `IUserRepository` | `Infrastructure/Repositories/UserRepository.cs` | tìm theo email/id, liệt kê, kiểm tra mật khẩu, tạo user + gán role, lấy/đặt lại roles, khóa/mở |
 | `IStationRepository` | `StationRepository.cs` | list, get, exists, add, update, delete |
 | `IOrderRepository` | `OrderRepository.cs` | get (có lọc theo khách), get kiện, phân trang, lịch sử, add (đơn + kiện + lịch sử), update (+ lịch sử) |
 | `ICustomerAddressRepository` | `CustomerAddressRepository.cs` | list theo khách, get, kiểm tra sở hữu, kiểm tra đã có mặc định, add, update, delete |
 | `IDroneRepository` | `DroneRepository.cs` | list, get, kiểm tra trùng mã, có drone nào chở được cân nặng X không, add, update, delete |
+| `IDeliveryRepository` | `DeliveryRepository.cs` | đếm chặng bay, lấy chặng mới nhất, lấy OTP của đơn, thêm chuyến bay, thêm OTP (lưu cùng lúc khi `IOrderRepository.UpdateAsync`) |
+| `INotificationRepository` | `NotificationRepository.cs` | list thông báo của user, get, thêm, lưu |
+| `IReportRepository` | `ReportRepository.cs` | đơn trong khoảng ngày, dòng xuất CSV |
 | `ITokenService` | `Infrastructure/Services/JwtTokenService.cs` | tạo JWT |
 | `ILlmClient` | `Infrastructure/Services/LlmClient.cs` | gọi chat completion của LLM |
 

@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <RootNamespace>SmartDrone</RootNamespace>
     <AssemblyName>SmartDrone</AssemblyName>
+    <DefaultItemExcludes>$(DefaultItemExcludes);**/bin/**;**/obj/**</DefaultItemExcludes>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="EFCore.NamingConventions" Version="8.0.3" />
