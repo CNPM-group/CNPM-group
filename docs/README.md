@@ -16,11 +16,13 @@ Tài liệu của dự án. Code nằm ở `src/`, ở đây chỉ có mô tả.
 | `SmartDroneDeliveryproject-overview/project-overview/04-thiet-ke-he-thong.md` | Thiết kế hệ thống | Viết báo cáo phần IV |
 | `SmartDroneDeliveryproject-overview/project-overview/05-cong-nghe-va-cong-cu.md` | Công nghệ và công cụ | Viết báo cáo phần IV |
 | `SmartDroneDeliveryproject-overview/project-overview/06-xay-dung-va-trien-khai.md` | Xây dựng và triển khai, phân công, kết luận | Viết báo cáo phần V–VI |
+| `SmartDroneDeliveryproject-overview/project-overview/07-kiem-thu-va-danh-gia.md` | Kiểm thử và đánh giá | Viết báo cáo phần V |
+| `SmartDroneDeliveryproject-overview/project-overview/08-ket-qua-dat-duoc.md` | Kết quả đạt được | Viết báo cáo phần cuối |
+| `SmartDroneDeliveryproject-overview/project-overview/09-ket-luan-va-huong-phat-trien.md` | Kết luận và hướng phát triển | Viết báo cáo phần cuối |
 | `analytics/KPI_Definitions.md` | Định nghĩa các KPI (tỷ lệ thành công, thời gian giao...) | Làm dashboard |
 | `analytics/analytics_queries.sql` | Câu SQL thống kê đơn theo trạng thái, tỷ lệ thành công | Làm dashboard, kiểm tra số liệu |
 | `ai/ai-chatbot-prompt.md` | Prompt và luật của chatbot (chỉ dùng dữ liệu từ tool, không bịa) | Sửa `src/Services/AiService.cs` |
 | `ai/KAN18_Feasibility_Report.md` | Mẫu báo cáo thử nghiệm LLM API (KAN-18) | Điền kết quả gọi `POST /api/v1/ai/feasibility-test` |
-| `ai/KAN18_README.md` | Ghi chú cũ của KAN-18 (bản đầu, trước khi tách tầng) | Tham khảo lịch sử |
 | `reports/KAN16_KAN17_SmartDroneDelivery.docx` | Báo cáo KAN-16, KAN-17 | Nộp / tham khảo |
 
 Báo cáo chính (SPMP/SRS/SDD/Test/Release) nằm trên Confluence của nhóm.

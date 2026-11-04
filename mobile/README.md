@@ -65,8 +65,7 @@ flutter test
 
 | `services/signalr_service.dart` | Kết nối SignalR hub (`signalr_netcore`), đẩy sự kiện nhận được ra `Stream` `updates` |
 | `services/signalr_config.dart` | URL hub = gốc của `apiBaseUrl` + `/hubs/delivery`, sự kiện `OrderStatusUpdated` |
-| `pages/order_tracking_screen.dart` | Màn theo dõi đơn, **đang dùng dữ liệu cứng** (mã SD001, 4 bước); cần nối API/SignalR hoặc gộp vào `order_detail_page.dart` |
 
-Backend **chưa có** SignalR hub `/hubs/delivery`, nên `SignalRService.connect` hiện sẽ lỗi kết nối cho tới khi làm xong hub.
+Backend **chưa có** SignalR hub `/hubs/delivery`, nên `SignalRService.connect` hiện sẽ lỗi kết nối cho tới khi làm xong hub. Khi có hub thì nối vào `order_detail_page.dart` để timeline tự cập nhật (KAN-61).
 
 `test/widget_test.dart`: test mẫu của Flutter.

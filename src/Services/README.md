@@ -8,8 +8,9 @@ Service **không** biết HTTP (không có `IActionResult`, không đọc header
 |---|---|---|---|
 | `AuthService.cs` | `IUserRepository`, `ITokenService` | Đăng ký (luôn role Customer), đăng nhập, tạo JWT | [AuthService.md](AuthService.md) |
 | `StationService.cs` | `IStationRepository` | CRUD trạm; không tìm thấy → `NotFoundException` | bên dưới |
-| `OrderService.cs` | `IOrderRepository`, `IStationRepository`, `ICustomerAddressRepository`, `IDroneRepository` | Tạo, sửa, hủy, xem, phân trang, lịch sử đơn | [OrderService.md](OrderService.md) |
+| `OrderService.cs` | `IOrderRepository`, `IStationRepository`, `ICustomerAddressRepository`, `IDroneRepository` | Tạo, sửa, hủy, duyệt, từ chối, xem, phân trang, lịch sử đơn | [OrderService.md](OrderService.md) |
 | `CustomerAddressService.cs` | `ICustomerAddressRepository` | CRUD địa chỉ của khách | bên dưới |
+| `DroneService.cs` | `IDroneRepository`, `IStationRepository` | CRUD drone; mã drone không trùng, trạm hiện tại phải tồn tại, không xóa drone đang gán/đang bay | bên dưới |
 | `EtaService.cs` | `IStationRepository`, `EtaOptions` | Ước tính ETA trước khi tạo đơn: khoảng cách Haversine giữa 2 trạm ÷ vận tốc drone + phút cộng thêm theo cân nặng (KAN-53, công thức của Tài) | bên dưới |
 | `AiService.cs` | `ILlmClient`, `OrderService`, `StationService` | Hỏi LLM 1 câu; chatbot có gọi tool tra đơn/trạm/ETA | [AiService.md](AiService.md) |
 
@@ -19,6 +20,11 @@ Service **không** biết HTTP (không có `IActionResult`, không đọc header
 - `GetAsync(id)`: không có → `NotFoundException("Không tìm thấy trạm.")`.
 - `CreateAsync` / `UpdateAsync`: cắt khoảng trắng tên, gán tọa độ, trạng thái.
 - `DeleteAsync`: xóa. Trạm đang được đơn/drone tham chiếu thì PostgreSQL chặn bằng khóa ngoại (lỗi 500) – cần xử lý thêm khi làm màn quản lý trạm.
+
+## DroneService.cs
+
+- `CreateAsync` / `UpdateAsync`: mã drone trùng → `ConflictException` (409); `CurrentStationId` có mà trạm không tồn tại → `ValidationException` (400). Giới hạn tải, tầm bay, vận tốc kiểm tra ở `Api/Schemas/DroneSchemas.cs`.
+- `DeleteAsync`: drone đang `Assigned` hoặc `InFlight` → 409.
 
 ## EtaService.cs
 

@@ -15,7 +15,7 @@ Tương đương `dependency_container.py`. Đây là chỗ duy nhất nối **i
 | `IDroneRepository → DroneRepository` | Scoped | |
 | `ITokenService → JwtTokenService` | Scoped | |
 | `AddHttpClient<ILlmClient, LlmClient>()` | Transient | HttpClient do framework quản lý, tránh cạn socket |
-| `AuthService`, `StationService`, `OrderService`, `CustomerAddressService`, `AiService`, `EtaService` | Scoped | Service đăng ký bằng class luôn, không cần interface vì không có bản cài đặt thứ hai |
+| `AuthService`, `StationService`, `OrderService`, `CustomerAddressService`, `AiService`, `EtaService`, `DroneService` | Scoped | Service đăng ký bằng class luôn, không cần interface vì không có bản cài đặt thứ hai |
 
 Scoped = sống trong một request. Mọi repository dùng chung **một** `AppDbContext` trong cùng request, nên `OrderService` gọi nhiều repository rồi `SaveChangesAsync` một lần vẫn nằm trong một transaction.
 

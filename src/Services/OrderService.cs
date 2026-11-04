@@ -77,6 +77,42 @@ public sealed class OrderService(
         return order;
     }
 
+    public async Task<DeliveryOrder> ApproveAsync(Guid staffId, Guid orderId, string? note, CancellationToken ct = default)
+    {
+        var order = await GetAsync(null, orderId, ct);
+        OrderStateMachine.EnsureTransition(order.Status, OrderStatus.Approved);
+
+        var now = DateTime.UtcNow;
+        var history = NewHistory(order.Id, order.Status, OrderStatus.Approved, staffId,
+            string.IsNullOrWhiteSpace(note) ? "Đơn đã được duyệt." : note.Trim(), now);
+
+        order.Status = nameof(OrderStatus.Approved);
+        order.ApprovedBy = staffId;
+        order.ApprovedAtUtc = now;
+        order.UpdatedAtUtc = now;
+
+        await orders.UpdateAsync(order, history, ct);
+        return order;
+    }
+
+    public async Task<DeliveryOrder> RejectAsync(Guid staffId, Guid orderId, string reason, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(reason))
+            throw new ValidationException("Phải nhập lý do từ chối.");
+
+        var order = await GetAsync(null, orderId, ct);
+        OrderStateMachine.EnsureTransition(order.Status, OrderStatus.Rejected);
+
+        var now = DateTime.UtcNow;
+        var history = NewHistory(order.Id, order.Status, OrderStatus.Rejected, staffId, reason.Trim(), now);
+
+        order.Status = nameof(OrderStatus.Rejected);
+        order.UpdatedAtUtc = now;
+
+        await orders.UpdateAsync(order, history, ct);
+        return order;
+    }
+
     public Task<PagedResult<OrderSummary>> PageAsync(Guid? customerScope, string? status, int page, int pageSize, CancellationToken ct = default)
     {
         string? statusValue = null;

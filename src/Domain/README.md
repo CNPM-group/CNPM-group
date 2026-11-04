@@ -16,7 +16,9 @@ Lõi nghiệp vụ (tương đương `src/domain` của repo mẫu). Chỉ có c
 | `ApiConstants.DefaultPageSize` / `MaxPageSize` | 20 / 100 | Phân trang danh sách đơn |
 | `ApiConstants.MaxPromptLength` | 2000 | Giới hạn độ dài câu hỏi gửi AI |
 | `Roles.Customer` ... `Roles.Admin` | 5 role | `[Authorize(Roles = ...)]`, seed role |
-| `Roles.AdminOrManager` | `"Admin,Manager"` | Endpoint quản lý trạm |
+| `Roles.AdminOrManager` | `"Admin,Manager"` | Thêm/sửa/xóa trạm, drone |
+| `Roles.DispatchStaff` | `"Dispatcher,Manager,Admin"` | Duyệt/từ chối đơn |
+| `Roles.OperationsStaff` | `"Dispatcher,StationOperator,Manager,Admin"` | Xem danh sách drone |
 | `Roles.Staff` | Dispatcher, Manager, Admin | `User.IsStaff()`: được xem mọi đơn |
 | `OrderStatus` | Pending, Approved, Rejected, Scheduled, InTransit, ArrivedAtStation, Completed, Failed, Cancelled | Trạng thái đơn (lưu dạng chuỗi, CSDL có check constraint cùng danh sách) |
 | `StationStatus` | Available, Occupied, Maintenance | Trạng thái trạm |

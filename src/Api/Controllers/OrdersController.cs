@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using SmartDrone.Api.Schemas;
 using SmartDrone.Domain;
 using SmartDrone.Services;
@@ -48,6 +49,19 @@ public class OrdersController(OrderService orders, EtaService eta) : ControllerB
     [Authorize(Roles = Roles.Customer)]
     public async Task<ActionResult<OrderResponse>> Cancel(Guid id, CancellationToken ct) =>
         Ok(OrderResponse.From(await orders.CancelAsync(User.UserId(), id, ct)));
+
+    [HttpPost("{id:guid}/approve")]
+    [Authorize(Roles = Roles.DispatchStaff)]
+    public async Task<ActionResult<OrderResponse>> Approve(
+        Guid id,
+        [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] NoteRequest? request,
+        CancellationToken ct) =>
+        Ok(OrderResponse.From(await orders.ApproveAsync(User.UserId(), id, request?.Note, ct)));
+
+    [HttpPost("{id:guid}/reject")]
+    [Authorize(Roles = Roles.DispatchStaff)]
+    public async Task<ActionResult<OrderResponse>> Reject(Guid id, RejectRequest request, CancellationToken ct) =>
+        Ok(OrderResponse.From(await orders.RejectAsync(User.UserId(), id, request.Reason, ct)));
 
     [HttpGet("{id:guid}/history")]
     public async Task<ActionResult<IReadOnlyList<OrderStatusHistoryResponse>>> GetHistory(Guid id, CancellationToken ct) =>

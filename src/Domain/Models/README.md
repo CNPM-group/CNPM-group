@@ -11,7 +11,7 @@ Model là class thuần, không biết mình được lưu ở đâu. Cách map 
 | `User.cs` | `users` | Người dùng ở mức nghiệp vụ (id, email, họ tên, SĐT, còn hoạt động). Bản lưu CSDL là `AppUser` ở Infrastructure | Auth |
 | `LandingStation.cs` | `landing_stations` | Trạm hạ cánh: tên, sức chứa (mặc định 2), tọa độ, trạng thái | Stations, Orders, AI |
 | `StationRoute.cs` | `station_routes` | Tuyến bay có hướng giữa 2 trạm, khoảng cách km | Seed (20 tuyến); dùng khi làm lập lịch |
-| `Drone.cs` | `drones` | Mã, model, tải tối đa, tầm bay, vận tốc, % pin, trạng thái, trạm hiện tại | Kiểm tra tải khi tạo đơn |
+| `Drone.cs` | `drones` | Mã, model, tải tối đa, tầm bay, vận tốc, % pin, trạng thái, trạm hiện tại | API drone, kiểm tra tải khi tạo đơn |
 | `Package.cs` | `packages` | Kiện hàng: mô tả, cân nặng, kích thước, khóa ảnh trên MinIO | Orders |
 | `CustomerAddress.cs` | `customer_addresses` | Địa chỉ giao của khách, có cờ mặc định | Customer addresses, Orders |
 | `DeliveryOrder.cs` | `delivery_orders` | Đơn giao: mã tra cứu, khách, kiện, trạm gửi/nhận, trạng thái, người duyệt, lịch, ETA, lý do thất bại | Orders, AI |
@@ -58,7 +58,7 @@ Rejected, Completed, Cancelled: trạng thái cuối
 | `IStationRepository` | `StationRepository.cs` | list, get, exists, add, update, delete |
 | `IOrderRepository` | `OrderRepository.cs` | get (có lọc theo khách), get kiện, phân trang, lịch sử, add (đơn + kiện + lịch sử), update (+ lịch sử) |
 | `ICustomerAddressRepository` | `CustomerAddressRepository.cs` | list theo khách, get, kiểm tra sở hữu, kiểm tra đã có mặc định, add, update, delete |
-| `IDroneRepository` | `DroneRepository.cs` | có drone nào chở được cân nặng X không |
+| `IDroneRepository` | `DroneRepository.cs` | list, get, kiểm tra trùng mã, có drone nào chở được cân nặng X không, add, update, delete |
 | `ITokenService` | `Infrastructure/Services/JwtTokenService.cs` | tạo JWT |
 | `ILlmClient` | `Infrastructure/Services/LlmClient.cs` | gọi chat completion của LLM |
 

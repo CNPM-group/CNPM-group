@@ -40,6 +40,7 @@ public static class DependencyContainer
         services.AddScoped<CustomerAddressService>();
         services.AddScoped<AiService>();
         services.AddScoped<EtaService>();
+        services.AddScoped<DroneService>();
 
         return services;
     }

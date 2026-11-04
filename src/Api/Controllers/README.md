@@ -34,7 +34,19 @@ Chi tiết từng endpoint: [OrdersController.md](OrdersController.md)
 | GET | `/{id}` | Đã đăng nhập | Chi tiết đơn |
 | PUT | `/{id}` | Customer | Sửa đơn khi còn `Pending` |
 | POST | `/{id}/cancel` | Customer | Hủy khi còn `Pending` |
+| POST | `/{id}/approve` | Dispatcher, Manager, Admin | Duyệt đơn `Pending` → `Approved`, body `{ "note" }` không bắt buộc |
+| POST | `/{id}/reject` | Dispatcher, Manager, Admin | Từ chối đơn `Pending` → `Rejected`, bắt buộc `{ "reason" }` |
 | GET | `/{id}/history` | Đã đăng nhập | Lịch sử chuyển trạng thái (timeline) |
+
+## DronesController.cs – `/api/v1/drones`
+
+| Method | Path | Quyền | Mô tả |
+|---|---|---|---|
+| GET | `/` | Dispatcher, StationOperator, Manager, Admin | Danh sách drone, sắp theo mã |
+| GET | `/{id}` | như trên | Chi tiết drone |
+| POST | `/` | Admin, Manager | Thêm drone. Trùng mã → 409, trạm hiện tại không tồn tại → 400 |
+| PUT | `/{id}` | Admin, Manager | Sửa drone |
+| DELETE | `/{id}` | Admin, Manager | Xóa. Drone đang `Assigned`/`InFlight` → 409 |
 
 ## CustomerAddressesController.cs – `/api/v1/customers/me/addresses`
 

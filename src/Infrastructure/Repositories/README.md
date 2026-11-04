@@ -10,7 +10,7 @@ Mọi repository nhận cùng một `AppDbContext` (scoped theo request). Hàm `
 | `StationRepository.cs` | `IStationRepository` | List dùng `AsNoTracking` (chỉ đọc, nhanh hơn); `GetByIdAsync` để tracking nên sửa xong chỉ cần `UpdateAsync`. |
 | `OrderRepository.cs` | `IOrderRepository` | Chi tiết: [OrderRepository.md](OrderRepository.md) |
 | `CustomerAddressRepository.cs` | `ICustomerAddressRepository` | Mọi truy vấn lọc theo `customerId`. `HasOtherDefaultAsync(customerId, exceptId)` bỏ qua chính địa chỉ đang sửa. |
-| `DroneRepository.cs` | `IDroneRepository` | `AnyCanCarryAsync(kg)`: có drone nào `MaxPayloadKg ≥ kg`. |
+| `DroneRepository.cs` | `IDroneRepository` | CRUD drone, `CodeExistsAsync(code, exceptId)` kiểm tra trùng mã (bỏ qua chính drone đang sửa), `AnyCanCarryAsync(kg)`: có drone nào `MaxPayloadKg ≥ kg`. |
 
 ## Viết repository mới
 

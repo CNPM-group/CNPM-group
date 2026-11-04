@@ -20,6 +20,8 @@ Ngoài ra schema đã chặn cân nặng ngoài 0.01–50 kg, kích thước ngo
 | `CreateAsync(customerId, input, package)` | Kiểm tra luật → tạo mã tra cứu `SDD-xxxxxxxxxxxxxxxx` (20 ký tự) → đơn `Pending` → một dòng lịch sử `null → Pending` → lưu đơn, kiện, lịch sử trong **một** lần `SaveChanges` |
 | `UpdateAsync(customerId, orderId, input, package)` | Chỉ khi `Pending` (khác → 409). Kiểm tra luật, sửa kiện + trạm + địa chỉ + ghi chú |
 | `CancelAsync(customerId, orderId)` | Chỉ khi `Pending` (khác → 409). Đổi sang `Cancelled`, ghi lịch sử |
+| `ApproveAsync(staffId, orderId, note)` | `Pending` → `Approved` qua `OrderStateMachine`, ghi `ApprovedBy`, `ApprovedAtUtc` và một dòng lịch sử (ghi chú mặc định "Đơn đã được duyệt.") |
+| `RejectAsync(staffId, orderId, reason)` | `Pending` → `Rejected`, bắt buộc lý do (lưu vào ghi chú của dòng lịch sử) |
 | `PageAsync(scope, status, page, pageSize)` | Kiểm tra `status` hợp lệ (sai → 400), kẹp `page ≥ 1`, `1 ≤ pageSize ≤ 100` |
 | `GetAsync(scope, orderId)` | `scope = null` (nhân viên) xem mọi đơn; `scope = customerId` chỉ đơn của khách đó; không thấy → 404 |
 | `GetHistoryAsync(scope, orderId)` | Kiểm tra quyền xem như `GetAsync` rồi trả lịch sử cũ → mới |
@@ -28,7 +30,7 @@ Ngoài ra schema đã chặn cân nặng ngoài 0.01–50 kg, kích thước ngo
 
 Danh sách trạng thái nằm ở `OrderStatus` (`Domain/Constants.cs`); bảng chuyển hợp lệ ở `Domain/Models/OrderStateMachine.cs` (khớp mục IV.3.1 của báo cáo). `CancelAsync` đã đi qua `OrderStateMachine.EnsureTransition`.
 
-Hiện service mới có tạo/sửa/hủy. Duyệt, từ chối, lên lịch, gán drone, xác nhận giao làm ở các sprint sau (Jira KAN); bước nào đổi trạng thái cũng phải ghi một dòng `OrderStatusHistory` giống `CancelAsync`, và gọi `OrderStateMachine.EnsureTransition` trước khi đổi để chuyển sai trả 409 như `docs/openapi.yaml` quy định.
+Hiện service có tạo/sửa/hủy/duyệt/từ chối. Lên lịch, gán drone, xác nhận giao làm ở các sprint sau (Jira KAN); bước nào đổi trạng thái cũng phải ghi một dòng `OrderStatusHistory` giống `CancelAsync`, và gọi `OrderStateMachine.EnsureTransition` trước khi đổi để chuyển sai trả 409 như `docs/openapi.yaml` quy định.
 
 ## Vì sao service không gọi `SaveChanges`
 

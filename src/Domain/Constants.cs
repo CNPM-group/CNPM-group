@@ -17,6 +17,8 @@ public static class Roles
     public const string Admin = "Admin";
 
     public const string AdminOrManager = "Admin,Manager";
+    public const string DispatchStaff = "Dispatcher,Manager,Admin";
+    public const string OperationsStaff = "Dispatcher,StationOperator,Manager,Admin";
 
     public static readonly string[] All = { Customer, Dispatcher, StationOperator, Manager, Admin };
     public static readonly string[] Staff = { Dispatcher, Manager, Admin };

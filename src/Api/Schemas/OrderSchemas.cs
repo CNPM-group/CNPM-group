@@ -90,3 +90,7 @@ public sealed record EtaResponse(double DistanceKm, double EstimatedMinutes)
 {
     public static EtaResponse From(EtaEstimate e) => new(e.DistanceKm, e.EstimatedMinutes);
 }
+
+public sealed record NoteRequest([MaxLength(1000)] string? Note);
+
+public sealed record RejectRequest([Required, MinLength(1), MaxLength(1000)] string Reason);
