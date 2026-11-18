@@ -113,7 +113,7 @@ public sealed class AiInsightService(
     {
         var report = await reports.SummaryAsync(from, to, ct);
         var rows = await reportRows.ExportRowsAsync(report.FromUtc, report.ToUtc, ct);
-        var facts = InsightFacts.From(report, rows);
+        var facts = InsightFacts.Build(report, rows);
 
         var (text, source, note) = await WriteAsync(
             InsightPrompt, facts, 600, () => string.Join("\n", RuleInsights(facts).Select(p => "- " + p)), ct);
@@ -304,7 +304,7 @@ public sealed record InsightFacts(
     IReadOnlyList<ReasonCount> TopFailureReasons,
     IReadOnlyList<RouteCount> TopRoutes)
 {
-    public static InsightFacts From(OrderReport r, IReadOnlyList<OrderExportRow> rows)
+    public static InsightFacts Build(OrderReport r, IReadOnlyList<OrderExportRow> rows)
     {
         var peak = r.ByDay.OrderByDescending(d => d.Count).FirstOrDefault();
 
