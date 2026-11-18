@@ -182,6 +182,8 @@ CREATE TABLE delivery_orders (
     completed_at           timestamptz,
     failure_reason         text,
     notes                  text,
+    recipient_name         varchar(100),          -- v0.11: người nhận, trống thì lấy tên khách
+    recipient_phone        varchar(20),           -- v0.11
     created_at             timestamptz NOT NULL DEFAULT now(),
     updated_at             timestamptz NOT NULL DEFAULT now(),
     CONSTRAINT ck_order_status CHECK (status IN

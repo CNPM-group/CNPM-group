@@ -36,7 +36,7 @@ Tất cả API có tiền tố `/api/v1`, thử trực tiếp trên Swagger `htt
 | Giao hàng | Dispatcher, Station Operator | Gán drone + giờ bay → cất cánh → tới trạm (sinh OTP gửi khách) → nhập OTP hoàn tất; báo giao thất bại kèm lý do, giao lại bằng drone khác | `/orders/{id}/schedule`, `/start`, `/arrive`, `/confirm`, `/fail` |
 | Thông báo | Mọi người | Thông báo đổi trạng thái đơn, mã OTP nhận hàng; đánh dấu đã đọc | `/notifications`, `/notifications/{id}/read` |
 | Thống kê | Admin, Manager | Tổng đơn, tỷ lệ thành công, thời gian giao trung bình, số đơn theo trạng thái/ngày; xuất CSV | `/reports/orders`, `/reports/orders.csv` |
-| Trợ lý AI | Mọi người | Chatbot hỏi đáp về đơn, trạm, ETA | `/ai/chat`, `/ai/feasibility-test` |
+| Trợ lý AI | Mọi người | Chatbot hỏi đáp về đơn, trạm, ETA; AI tóm tắt chuyến giao; AI nhận xét vận hành (Manager, Admin) | `/ai/chat`, `/ai/feasibility-test`, `/orders/{id}/ai-summary`, `/reports/ai-insights` |
 
 Vòng đời đơn (mọi lần đổi trạng thái đều đi qua `OrderStateMachine`, sai luật trả 409):
 
@@ -54,31 +54,36 @@ Ghi đúng những gì code đang làm, không hứa trước:
 | Tính năng | Tình trạng | Cách làm |
 |---|---|---|
 | Ước tính ETA | **Đã có** | Không dùng mô hình học máy. Khoảng cách Haversine giữa 2 trạm ÷ tốc độ drone (mặc định 40 km/h) + 0,5 phút/kg kiện. Thông số chỉnh ở section `Eta` trong `appsettings.json` |
-| Chatbot hỗ trợ khách | **Đã có** | Gọi LLM API (chuẩn OpenAI) có function calling 3 tool: `get_order_status`, `get_station_status`, `get_delivery_eta`. Bot chỉ trả lời từ dữ liệu tool trả về, khách chỉ tra được đơn của chính mình. Không có `Llm:ApiKey` thì API báo lỗi 503, phần còn lại vẫn chạy. Prompt: [docs/ai/ai-chatbot-prompt.md](docs/ai/ai-chatbot-prompt.md) |
-| Tóm tắt chuyến giao bằng LLM | Chưa làm (KAN-62) | |
-| Phân tích vận hành / dashboard | Có API số liệu, chưa có AI | `/reports/orders` tính bằng SQL, không phải AI |
-| Gợi ý tuyến bay tối ưu, cảnh báo trễ | **Không làm trong đồ án này** | Hướng phát triển sau |
+| Chatbot hỗ trợ khách | **Đã có** | Gọi LLM API (chuẩn OpenAI) có function calling 4 tool: `get_order_status`, `get_station_status`, `get_delivery_eta`, `list_my_orders` (5 đơn gần nhất của người hỏi). Bot chỉ trả lời từ dữ liệu tool trả về, khách chỉ tra được đơn của chính mình. Không có `Llm:ApiKey` thì API báo lỗi 503, phần còn lại vẫn chạy. Prompt: [docs/ai/ai-chatbot-prompt.md](docs/ai/ai-chatbot-prompt.md) |
+| Tóm tắt chuyến giao bằng LLM | **Đã có** (KAN-62, v0.10) | `POST /orders/{id}/ai-summary`. Server lấy đơn, lịch sử, chuyến bay từ DB rồi đưa cho LLM viết 3–4 câu (trễ/sớm bao nhiêu phút, lý do thất bại...). Web: nút "Tóm tắt AI" ở trang Điều phối; app: thẻ "Tóm tắt chuyến giao" ở đơn đã kết thúc |
+| Nhận xét vận hành cho quản lý | **Đã có** (v0.10) | `GET /reports/ai-insights`. Số liệu 30 ngày (tỷ lệ thành công, lý do thất bại hay gặp, tuyến đông nhất, đơn chờ duyệt) → LLM viết 3–5 nhận xét kèm việc nên làm. Web: khung "Nhận xét của AI" ở trang Thống kê. Số liệu gốc vẫn tính bằng SQL |
+| Khi không có API key | Vẫn chạy | Chatbot trả 503; 2 tính năng trên thì server tự ghép câu từ dữ liệu, giao diện ghi rõ "Tự ghép từ dữ liệu". Prompt và luật: [docs/ai/ai-summary-insights.md](docs/ai/ai-summary-insights.md) |
+| Gợi ý tuyến bay tối ưu, cảnh báo trễ, ETA học từ dữ liệu | **Không làm trong đồ án này** | Hướng phát triển sau ([09-ket-luan-va-huong-phat-trien.md](docs/SmartDroneDeliveryproject-overview/project-overview/09-ket-luan-va-huong-phat-trien.md)) |
 
 ## Tình trạng hiện tại
 
-Cập nhật 05/11/2026. Chi tiết từng lần sửa: [CHANGELOG.md](CHANGELOG.md).
+Cập nhật 16/11/2026 (v0.11, báo cáo chính v1.0). Chi tiết từng lần sửa: [CHANGELOG.md](CHANGELOG.md). Báo cáo chính: [BaoCao_SmartDroneDelivery.md](docs/report/BaoCao_SmartDroneDelivery.md) (có bảng *Tình trạng theo yêu cầu đề* FR01–FR12). Báo cáo từng đợt: [v0.7 web + mobile](docs/report/BaoCao_v0.7_Web_Mobile.md), [v0.8](docs/report/BaoCao_v0.8.md), [v0.9](docs/report/BaoCao_v0.9.md), [v0.10](docs/report/BaoCao_v0.10.md), [v0.11](docs/report/BaoCao_v0.11.md). Test case: [v0.8](docs/report/KiemThu_v0.8.md) (38) + [v0.9](docs/report/KiemThu_v0.9.md) (18) + [v0.10](docs/report/KiemThu_v0.10.md) (12) + [v0.11](docs/report/KiemThu_v0.11.md) (20) = 88.
 
-**Backend – chạy được:**
-- Đăng nhập JWT 5 role, quản lý tài khoản, trạm, drone, địa chỉ giao.
-- Đơn hàng trọn vòng đời: tạo → duyệt → gán drone → bay → tới trạm → OTP → hoàn tất / thất bại → giao lại.
-- Thông báo trong app, thống kê + CSV, chatbot AI, ETA.
-- `docker compose up -d --build` dựng cả CSDL, MinIO, API, web.
+**Đủ các công nghệ đề yêu cầu:** ASP.NET Core Web API, ReactJS, Flutter, PostgreSQL, SignalR, Docker, MinIO, AI (chatbot, tóm tắt chuyến giao, nhận xét vận hành).
+
+- Backend: JWT 5 role; hồ sơ + đổi mật khẩu; quản lý tài khoản, khách hàng, trạm (sức chứa, tải trạm), drone, địa chỉ; đơn có người nhận, tìm theo mã; đơn hàng trọn vòng đời tạo → duyệt → gán drone → bay → tới trạm → OTP → hoàn tất / thất bại → giao lại hoặc hủy và hoàn; thông báo; **SignalR realtime**; **ảnh kiện trên MinIO**; thống kê theo ngày, theo trạm + CSV, lọc khoảng ngày; **nhật ký thao tác** tự ghi (v0.11); AI: chatbot, **tóm tắt chuyến giao, nhận xét vận hành** (v0.10); ETA; **giả lập drone bay + API theo dõi vị trí** (v0.9).
+- Web nhân viên **ReactJS** (`web/`): Điều phối (tìm mã đơn), Trạm (OTP, tiến độ bay, tải trạm), Khách hàng, Thống kê (lọc ngày, theo trạm, nhận xét AI), Drone & trạm, Tài khoản, Nhật ký (Admin), hộp thoại Hồ sơ; nút tóm tắt AI ở trang Điều phối.
+- Mobile khách hàng **Flutter** (`mobile/`): tạo đơn kèm ảnh và người nhận, sửa đơn chờ duyệt, tìm đơn, hồ sơ + đổi mật khẩu, theo dõi realtime (có sơ đồ drone đang bay), thông báo + OTP, trợ lý AI, AI tóm tắt chuyến giao, sổ địa chỉ.
+- Kiểm thử: Postman collection 66 request tự kiểm toàn luồng (`docs/postman/`), xUnit 17 hàm (`tests/SmartDrone.Tests`), CI build + test backend, web, mobile.
+- Sao lưu: `scripts/backup.sh` / `backup.bat`, `scripts/restore.sh`.
+- Tài liệu: mỗi file code có file `.md` cùng tên (hoặc dòng trong `README.md` của thư mục) giải thích file làm gì.
+- `docker compose up -d --build` dựng cả CSDL, MinIO, API, web React.
 
 **Còn làm:**
 
-| Việc | Người | Jira |
-|---|---|---|
-| Upload ảnh kiện / ảnh bằng chứng lên MinIO (`POST /packages/images` đã có trong `openapi.yaml`, app đã gọi, **API chưa có** → chọn ảnh khi tạo đơn sẽ lỗi 404) | Vinh | KAN-33 |
-| SignalR hub + bộ giả lập drone phát tọa độ (app đã có `signalr_service.dart`, chờ hub) | Vinh | KAN-55 |
-| Hoàn trả đơn Failed → Cancelled cho Dispatcher | Tiến | KAN-57 |
-| Web: hiện chỉ `login.html`, `register.html` gọi API thật; các trang đơn hàng, địa chỉ còn dữ liệu mẫu. Còn thiếu màn Dispatcher, Station Operator, dashboard | Huỳnh | KAN-41, 42, 59, 60, 65 |
-| Mobile: đăng nhập, danh sách đơn, chi tiết, tạo đơn đã gọi API; còn màn địa chỉ, thông báo/OTP, chat AI | Đức | KAN-47, 61, 67 |
-| Postman collection + test toàn luồng | Tài | KAN-37, 68 |
+| Việc | Ghi chú |
+|---|---|
+| `dotnet build` + `dotnet test`, sinh lại migration `AddOrderRecipient` bằng `dotnet ef` (file đang viết tay) | Bắt buộc, xem `src/Migrations/README.md` |
+| Chạy Postman collection + kịch bản demo trên máy thật, điền cột Kết quả trong `KiemThu_v0.8.md` → `KiemThu_v0.11.md` và bảng V.5 của báo cáo chính | Bắt buộc trước buổi báo cáo |
+| `flutter test`, build APK (`mobile/README.md`) | Bắt buộc |
+| Lấy `LLM_API_KEY` cho AI | Không có key thì chatbot trả 503, tóm tắt và nhận xét chỉ là bản tự ghép (không phải AI viết) |
+| Nền bản đồ thật cho sơ đồ theo dõi, chọn tọa độ địa chỉ trên bản đồ | Hướng phát triển, không cần cho demo |
+| API key cho hệ thống ngoài, gán nhân viên vào trạm, quản lý tuyến bay, ảnh bằng chứng giao, lưu lịch sử chat, test tải k6 | Ngoài phạm vi, ghi ở hướng phát triển |
 
 # Architecture
 
@@ -126,7 +131,8 @@ Cập nhật 05/11/2026. Chi tiết từng lần sửa: [CHANGELOG.md](CHANGELOG
     │   ├── appsettings.json
     │   ├── Dockerfile                # build image API cho docker compose
     │   └── SmartDrone.csproj
-    ├── web                           # giao diện web (HTML/JS)
+    ├── web-old                       # web HTML cũ (không dùng nữa)
+    ├── web                           # web nhân viên (ReactJS + Vite)
     ├── mobile                        # app Flutter cho khách hàng
     ├── docker-compose.yml            # PostgreSQL + MinIO + API + web
     ├── CHANGELOG.md                  # nhật ký thay đổi từng lần cập nhật
@@ -142,7 +148,8 @@ Mỗi thư mục trong `src/` có một `README.md` giải thích từng file tr
 | `src/Domain` | Lõi | Model, hằng số, exception, interface repository, `OrderStateMachine`. Không phụ thuộc EF Core hay framework | [src/Domain/README.md](src/Domain/README.md) |
 | `src/Infrastructure` | Phần cắm vào bên ngoài | PostgreSQL (EF Core), ASP.NET Identity, JWT, LLM API. Đổi CSDL chỉ sửa tầng này | [src/Infrastructure/README.md](src/Infrastructure/README.md) |
 | `src/Migrations` | Lịch sử CSDL | Tạo/sửa bảng theo từng phiên bản | [src/Migrations/README.md](src/Migrations/README.md) |
-| `web` | Giao diện web | Trang cho nhân viên và khách trên trình duyệt | [web/README.md](web/README.md) |
+| `web` | Web nhân viên (ReactJS) | Điều phối, nhân viên trạm, thống kê | [web/README.md](web/README.md) |
+| `web-old` | Web HTML cũ | Không dùng nữa, giữ để tham khảo | [web-old/README.md](web-old/README.md) |
 | `mobile` | App Flutter | App cho khách: đăng nhập, tạo đơn, theo dõi đơn | [mobile/README.md](mobile/README.md) |
 | `docs` | Tài liệu | Kiến trúc, hợp đồng API, CSDL, AI, phân tích nghiệp vụ | [docs/README.md](docs/README.md) |
 | `scripts` | Script tiện ích | Bật PostgreSQL bằng Docker | [scripts/README.md](scripts/README.md) |
@@ -211,7 +218,7 @@ Chưa có thì cài [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.
     docker compose up -d --build
 
 - API + Swagger: http://localhost:5080/swagger
-- Web: http://localhost:5173/login.html
+- Web: http://localhost:5173 (React, tự chuyển tới trang đăng nhập)
 - MinIO console: http://localhost:9001
 - Tắt: `docker compose down` (thêm `-v` nếu muốn xóa sạch dữ liệu)
 
@@ -312,7 +319,7 @@ dotnet ef database update --project src
 
 ## Chạy web và mobile
 
-- Web: `npx serve -l 5173 web` rồi mở http://localhost:5173/login.html (hoặc dùng Docker ở Cách 1) – xem [web/README.md](web/README.md)
+- Web: `cd web && npm install && npm run dev` rồi mở http://localhost:5173 (hoặc dùng Docker ở Cách 1) – xem [web/README.md](web/README.md)
 - Mobile: xem [mobile/README.md](mobile/README.md)
 
 ## Tài liệu
