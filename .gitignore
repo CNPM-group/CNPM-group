@@ -12,3 +12,4 @@ build/
 *.log
 ket-qua-test.txt
 appsettings.Local.json
+backups/

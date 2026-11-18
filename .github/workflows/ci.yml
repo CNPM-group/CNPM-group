@@ -15,3 +15,31 @@ jobs:
           dotnet-version: 8.0.x
       - run: dotnet restore src/SmartDrone.csproj
       - run: dotnet build src/SmartDrone.csproj --no-restore -c Release
+      - run: dotnet test tests/SmartDrone.Tests -c Release
+
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - run: npm run build
+
+  mobile:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - run: flutter pub get
+      - run: flutter analyze --no-fatal-infos --no-fatal-warnings
+      - run: flutter test
