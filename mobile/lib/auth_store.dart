@@ -6,6 +6,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'api.dart';
 import 'models.dart';
 import 'nav.dart';
+import 'services/signalr_service.dart';
 
 /// Giữ trạng thái đăng nhập, token lưu trong bộ nhớ an toàn của máy.
 class AuthStore extends ChangeNotifier {
@@ -56,6 +57,7 @@ class AuthStore extends ChangeNotifier {
   }
 
   Future<void> logout() async {
+    await SignalRService.instance.disconnect();
     _auth = null;
     await _storage.delete(key: _key);
     // Đóng hết các màn đang mở, về màn gốc (Gate sẽ hiện trang đăng nhập)

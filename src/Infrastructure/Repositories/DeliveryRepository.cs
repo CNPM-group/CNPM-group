@@ -18,6 +18,24 @@ public sealed class DeliveryRepository(AppDbContext db) : IDeliveryRepository
     public Task<DeliveryConfirmation?> GetConfirmationAsync(Guid orderId, CancellationToken ct = default) =>
         db.DeliveryConfirmations.FirstOrDefaultAsync(c => c.OrderId == orderId, ct);
 
+    public async Task SavePositionAsync(Guid flightId, decimal latitude, decimal longitude, DateTime recordedAtUtc, CancellationToken ct = default)
+    {
+        await db.DroneFlights
+            .Where(f => f.Id == flightId)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(f => f.CurrentLatitude, (decimal?)latitude)
+                .SetProperty(f => f.CurrentLongitude, (decimal?)longitude), ct);
+
+        db.FlightTelemetries.Add(new FlightTelemetry
+        {
+            FlightId = flightId,
+            Latitude = latitude,
+            Longitude = longitude,
+            RecordedAtUtc = recordedAtUtc
+        });
+        await db.SaveChangesAsync(ct);
+    }
+
     public void AddFlight(DroneFlight flight) => db.DroneFlights.Add(flight);
 
     public void AddConfirmation(DeliveryConfirmation confirmation) => db.DeliveryConfirmations.Add(confirmation);

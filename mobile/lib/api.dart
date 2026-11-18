@@ -91,8 +91,13 @@ class Api {
         return (r.data as List).map((e) => Station.fromJson(e as Map<String, dynamic>)).toList();
       });
 
-  Future<OrderPage> getOrders({int page = 1, int pageSize = 50}) => _guard(() async {
-        final r = await _dio.get('/orders', queryParameters: {'page': page, 'pageSize': pageSize});
+  /// [search]: tìm theo mã đơn (v0.11), trống = lấy hết.
+  Future<OrderPage> getOrders({int page = 1, int pageSize = 50, String? search}) => _guard(() async {
+        final r = await _dio.get('/orders', queryParameters: {
+          'page': page,
+          'pageSize': pageSize,
+          if (search != null && search.isNotEmpty) 'q': search,
+        });
         final d = r.data as Map<String, dynamic>;
         return OrderPage(
           items: (d['items'] as List).map((e) => OrderSummary.fromJson(e as Map<String, dynamic>)).toList(),
@@ -100,6 +105,22 @@ class Api {
           pageSize: d['pageSize'] as int,
           totalItems: d['totalItems'] as int,
         );
+      });
+
+  /// Hồ sơ cá nhân (v0.11).
+  Future<UserProfile> getMe() => _guard(() async {
+        final r = await _dio.get('/auth/me');
+        return UserProfile.fromJson(r.data as Map<String, dynamic>);
+      });
+
+  Future<UserProfile> updateMe(String fullName, String? phone) => _guard(() async {
+        final r = await _dio.put('/auth/me', data: {'fullName': fullName, 'phone': phone});
+        return UserProfile.fromJson(r.data as Map<String, dynamic>);
+      });
+
+  /// Đổi mật khẩu (v0.11), sai mật khẩu cũ → ApiException "Mật khẩu hiện tại không đúng."
+  Future<void> changePassword(String currentPassword, String newPassword) => _guard(() async {
+        await _dio.post('/auth/me/password', data: {'currentPassword': currentPassword, 'newPassword': newPassword});
       });
 
   Future<Order> getOrder(String id) => _guard(() async {
@@ -112,14 +133,82 @@ class Api {
         return (r.data as List).map((e) => HistoryItem.fromJson(e as Map<String, dynamic>)).toList();
       });
 
-  Future<Order> createOrder(Map<String, dynamic> body) => _guard(() async {
+  /// Trả về id đơn vừa tạo. API tạo/hủy chỉ trả bản tóm tắt, chi tiết đầy đủ lấy bằng getOrder.
+  Future<String> createOrder(Map<String, dynamic> body) => _guard(() async {
         final r = await _dio.post('/orders', data: body);
-        return Order.fromJson(r.data as Map<String, dynamic>);
+        return (r.data as Map<String, dynamic>)['id'] as String;
       });
 
-  Future<Order> cancelOrder(String id, {String? reason}) => _guard(() async {
-        final r = await _dio.post('/orders/$id/cancel', data: {'reason': reason});
-        return Order.fromJson(r.data as Map<String, dynamic>);
+  /// Sửa đơn khi còn Pending (v0.11, FR05). Body giống tạo đơn.
+  Future<void> updateOrder(String id, Map<String, dynamic> body) => _guard(() async {
+        await _dio.put('/orders/$id', data: body);
+      });
+
+  Future<void> cancelOrder(String id, {String? reason}) => _guard(() async {
+        await _dio.post('/orders/$id/cancel', data: {'reason': reason});
+      });
+
+  Future<List<AppNotification>> getNotifications({bool unreadOnly = false}) => _guard(() async {
+        final r = await _dio.get('/notifications', queryParameters: {'unreadOnly': unreadOnly});
+        return (r.data as List).map((e) => AppNotification.fromJson(e as Map<String, dynamic>)).toList();
+      });
+
+  Future<void> markRead(String id) => _guard(() async {
+        await _dio.post('/notifications/$id/read');
+      });
+
+  /// Vị trí drone của đơn (v0.9).
+  Future<TrackingInfo> getTracking(String orderId) => _guard(() async {
+        final r = await _dio.get('/orders/$orderId/tracking');
+        return TrackingInfo.fromJson(r.data as Map<String, dynamic>);
+      });
+
+  /// Ước tính trước khi đặt đơn: khoảng cách đường chim bay và số phút bay.
+  Future<({double km, double minutes})> estimateEta(String originId, String destinationId, double weightKg) =>
+      _guard(() async {
+        final r = await _dio.get('/orders/eta', queryParameters: {
+          'originStationId': originId,
+          'destinationStationId': destinationId,
+          'weightKg': weightKg,
+        });
+        final j = r.data as Map<String, dynamic>;
+        return (km: (j['distanceKm'] as num).toDouble(), minutes: (j['estimatedMinutes'] as num).toDouble());
+      });
+
+  /// AI tóm tắt chuyến giao (v0.10, KAN-62). Chờ tối đa 60 giây vì phải đợi LLM viết.
+  Future<AiSummary> getAiSummary(String orderId) => _guard(() async {
+        final r = await _dio.post(
+          '/orders/$orderId/ai-summary',
+          options: Options(receiveTimeout: const Duration(seconds: 60)),
+        );
+        return AiSummary.fromJson(r.data as Map<String, dynamic>);
+      });
+
+  Future<String> chat(String message) => _guard(() async {
+        final r = await _dio.post(
+          '/ai/chat',
+          data: {'message': message},
+          options: Options(receiveTimeout: const Duration(seconds: 60)),
+        );
+        return ((r.data as Map<String, dynamic>)['answer'] as String?) ?? '';
+      });
+
+  Future<List<CustomerAddress>> getAddresses() => _guard(() async {
+        final r = await _dio.get('/customers/me/addresses');
+        return (r.data as List).map((e) => CustomerAddress.fromJson(e as Map<String, dynamic>)).toList();
+      });
+
+  /// id = null thì thêm mới, có id thì sửa.
+  Future<void> saveAddress(String? id, Map<String, dynamic> body) => _guard(() async {
+        if (id == null) {
+          await _dio.post('/customers/me/addresses', data: body);
+        } else {
+          await _dio.put('/customers/me/addresses/$id', data: body);
+        }
+      });
+
+  Future<void> deleteAddress(String id) => _guard(() async {
+        await _dio.delete('/customers/me/addresses/$id');
       });
 
   /// Upload ảnh kiện, trả về imageKey để gửi kèm khi tạo đơn.

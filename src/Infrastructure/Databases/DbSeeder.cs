@@ -157,6 +157,7 @@ public static class DbSeeder
         Latitude = lat,
         Longitude = lng,
         Status = StationStatus.Available,
+        Capacity = 4,
         CreatedAtUtc = DateTime.UtcNow
     };
 }

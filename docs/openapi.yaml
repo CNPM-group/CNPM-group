@@ -28,6 +28,8 @@ tags:
   - name: Notifications
   - name: Reports
   - name: Users
+  - name: AI
+    description: Chatbot, tóm tắt chuyến giao, nhận xét vận hành
 
 security:
   - bearerAuth: []
@@ -80,14 +82,85 @@ paths:
   /auth/me:
     get:
       tags: [Auth]
-      summary: Xem mình là ai và có role gì
+      summary: Hồ sơ của mình (họ tên, số điện thoại, role)
       responses:
         '200':
-          description: Thông tin từ token
+          description: Đọc từ CSDL (v0.11)
           content:
             application/json:
               schema: { $ref: '#/components/schemas/UserInfo' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+    put:
+      tags: [Auth]
+      summary: Sửa họ tên, số điện thoại của mình (FR01, v0.11)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProfileRequest' }
+      responses:
+        '200':
+          description: Hồ sơ sau khi sửa
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserInfo' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /auth/me/password:
+    post:
+      tags: [Auth]
+      summary: Đổi mật khẩu (UC-03, v0.11)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPassword, newPassword]
+              properties:
+                currentPassword: { type: string }
+                newPassword: { type: string, minLength: 8 }
+      responses:
+        '204': { description: Đã đổi }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /audit-logs:
+    get:
+      tags: [Users]
+      summary: Nhật ký thao tác (UC-29, Admin, v0.11)
+      parameters:
+        - { name: entity, in: query, required: false, schema: { type: string }, description: 'Tên lớp dữ liệu, vd DeliveryOrder, Drone' }
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Mới nhất trước
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: integer }
+                        createdAtUtc: { type: string, format: date-time }
+                        userId: { type: string, format: uuid, nullable: true }
+                        userEmail: { type: string, nullable: true }
+                        action: { type: string, enum: [Added, Modified, Deleted] }
+                        entityName: { type: string }
+                        entityId: { type: string, nullable: true }
+                        oldValues: { type: string, nullable: true, description: Chuỗi JSON }
+                        newValues: { type: string, nullable: true, description: Chuỗi JSON }
+                        ipAddress: { type: string, nullable: true }
+                  page: { type: integer }
+                  pageSize: { type: integer }
+                  totalItems: { type: integer }
+        '403': { $ref: '#/components/responses/Forbidden' }
 
   /stations:
     get:
@@ -282,13 +355,18 @@ paths:
       summary: Danh sách đơn hàng
       description: |
         - Customer chỉ thấy đơn của chính mình.
-        - Dispatcher, Manager, Admin thấy tất cả.
+        - Nhân viên (Dispatcher, Station Operator, Manager, Admin) thấy tất cả.
         - Đơn mới nhất xếp trước.
       parameters:
         - name: status
           in: query
           required: false
           schema: { $ref: '#/components/schemas/OrderStatus' }
+        - name: q
+          in: query
+          required: false
+          description: Tìm theo một phần mã đơn, không phân biệt hoa thường (v0.11)
+          schema: { type: string, maxLength: 50 }
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PageSize'
       responses:
@@ -344,6 +422,20 @@ paths:
               schema: { $ref: '#/components/schemas/Order' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Orders]
+      summary: Khách sửa đơn khi còn Pending
+      description: Body giống tạo đơn. Đơn không còn Pending → 409.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateOrderRequest' }
+      responses:
+        '200': { description: Đơn sau khi sửa (bản rút gọn) }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: Đơn không còn ở Pending }
 
   /orders/{id}/history:
     parameters:
@@ -559,6 +651,94 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
 
+  /orders/{id}/return:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [Delivery]
+      summary: Hủy và hoàn trả đơn thất bại (Dispatcher, Manager, Admin) – KAN-57
+      description: 'Chỉ `Failed` → `Cancelled`. Bắt buộc lý do. Khách nhận thông báo.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/FailRequest' }
+      responses:
+        '200':
+          description: Đơn sau khi chuyển trạng thái
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Order' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /orders/{id}/tracking:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Delivery]
+      summary: Vị trí drone giả lập và % đã bay (v0.9)
+      description: Customer chỉ xem đơn của mình. Chưa bay → ở trạm đi (0%); đã tới trạm/hoàn tất → ở trạm đến (100%).
+      responses:
+        '200':
+          description: Vị trí hiện tại
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  orderId: { type: string, format: uuid }
+                  trackingCode: { type: string }
+                  status: { type: string }
+                  droneCode: { type: string, nullable: true }
+                  latitude: { type: number }
+                  longitude: { type: number }
+                  progressPct: { type: number, minimum: 0, maximum: 100 }
+                  origin: { $ref: '#/components/schemas/StationPoint' }
+                  destination: { $ref: '#/components/schemas/StationPoint' }
+                  departedAtUtc: { type: string, format: date-time, nullable: true }
+                  etaUtc: { type: string, format: date-time, nullable: true }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /orders/{id}/ai-summary:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [AI]
+      summary: AI tóm tắt chuyến giao (KAN-62, v0.10)
+      description: |
+        Khách chỉ tóm tắt được đơn của mình. Chưa cấu hình LLM hoặc LLM lỗi thì server tự ghép
+        nội dung từ dữ liệu, source = "rule" và note ghi lý do (không trả 503).
+      responses:
+        '200':
+          description: Đoạn tóm tắt
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AiSummary' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /orders/{id}/package-image:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Packages]
+      summary: Ảnh kiện hàng của đơn
+      description: Đọc ảnh từ MinIO qua API. Customer chỉ xem được ảnh đơn của mình; nhân viên xem mọi đơn. Đơn không có ảnh → 404.
+      responses:
+        '200':
+          description: File ảnh
+          content:
+            image/jpeg: { schema: { type: string, format: binary } }
+            image/png: { schema: { type: string, format: binary } }
+            image/webp: { schema: { type: string, format: binary } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
   /notifications:
     get:
       tags: [Notifications]
@@ -589,6 +769,81 @@ paths:
               schema: { $ref: '#/components/schemas/Notification' }
         '404': { $ref: '#/components/responses/NotFound' }
 
+  /stations/load:
+    get:
+      tags: [Stations]
+      summary: Tải từng trạm (FR07, v0.11)
+      description: Dispatcher, Station Operator, Manager, Admin. Gán drone tới trạm có incoming + waiting ≥ capacity → 409.
+      responses:
+        '200':
+          description: Mỗi trạm một dòng
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/StationLoad' } }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /customers:
+    get:
+      tags: [Users]
+      summary: Danh sách khách hàng kèm số đơn (FR03, v0.11)
+      description: Dispatcher, Manager, Admin.
+      parameters:
+        - { name: q, in: query, required: false, schema: { type: string }, description: Tìm theo tên, email, số điện thoại }
+      responses:
+        '200':
+          description: Danh sách khách
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Customer' } }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /customers/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Users]
+      summary: Chi tiết khách, địa chỉ, 20 đơn gần nhất (v0.11)
+      responses:
+        '200':
+          description: Chi tiết
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CustomerDetail' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Users]
+      summary: Sửa họ tên, số điện thoại của khách (Manager, Admin, v0.11)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProfileRequest' }
+      responses:
+        '200':
+          description: Khách sau khi sửa
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Customer' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /reports/stations:
+    get:
+      tags: [Reports]
+      summary: Hiệu quả theo trạm (FR11, Admin, Manager, v0.11)
+      parameters:
+        - { name: from, in: query, schema: { type: string, format: date-time } }
+        - { name: to, in: query, schema: { type: string, format: date-time } }
+      responses:
+        '200':
+          description: Mỗi trạm một dòng, hoàn tất / thất bại / tỷ lệ tính theo trạm nhận
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/StationReport' } }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
   /reports/orders:
     get:
       tags: [Reports]
@@ -618,6 +873,122 @@ paths:
           content:
             text/csv: {}
         '403': { $ref: '#/components/responses/Forbidden' }
+
+  /reports/ai-insights:
+    get:
+      tags: [AI]
+      summary: AI nhận xét vận hành (Admin, Manager, v0.10)
+      description: 3–5 nhận xét kèm việc nên làm, từ số liệu khoảng from–to (mặc định 30 ngày gần nhất).
+      parameters:
+        - { name: from, in: query, schema: { type: string, format: date-time } }
+        - { name: to, in: query, schema: { type: string, format: date-time } }
+      responses:
+        '200':
+          description: Danh sách nhận xét
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AiInsights' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /customers/me/addresses:
+    get:
+      tags: [Users]
+      summary: Sổ địa chỉ của khách đang đăng nhập (Customer)
+      responses:
+        '200':
+          description: Địa chỉ, mới nhất trước
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/CustomerAddress' } }
+    post:
+      tags: [Users]
+      summary: Thêm địa chỉ. isDefault = true thì địa chỉ mặc định cũ tự bỏ cờ
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CustomerAddressRequest' }
+      responses:
+        '201': { description: Đã thêm }
+        '400': { $ref: '#/components/responses/BadRequest' }
+
+  /customers/me/addresses/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Users]
+      summary: Chi tiết 1 địa chỉ của mình
+      responses:
+        '200':
+          description: Địa chỉ
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CustomerAddress' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Users]
+      summary: Sửa địa chỉ của mình
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CustomerAddressRequest' }
+      responses:
+        '200': { description: Đã sửa }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Users]
+      summary: Xóa địa chỉ của mình
+      responses:
+        '204': { description: Đã xóa }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /ai/feasibility-test:
+    post:
+      tags: [AI]
+      summary: Gửi 1 prompt tới LLM, đo độ trễ và token (KAN-18)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [prompt]
+              properties:
+                prompt: { type: string, maxLength: 2000 }
+      responses:
+        '200': { description: Câu trả lời, model, latencyMs, usage }
+        '503': { description: Chưa cấu hình LLM API }
+
+  /ai/chat:
+    post:
+      tags: [AI]
+      summary: Chatbot hỗ trợ (có function calling tra đơn, trạm, ETA)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [message]
+              properties:
+                message: { type: string, maxLength: 2000 }
+      responses:
+        '200':
+          description: Câu trả lời
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  model: { type: string }
+                  answer: { type: string, nullable: true }
+                  latencyMs: { type: integer }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '503':
+          description: Chưa cấu hình LLM API
 
   /users:
     get:
@@ -749,6 +1120,48 @@ components:
           schema: { $ref: '#/components/schemas/ProblemDetails' }
 
   schemas:
+    CustomerAddressRequest:
+      type: object
+      required: [label, addressLine]
+      properties:
+        label: { type: string, maxLength: 50, example: Nhà }
+        addressLine: { type: string, maxLength: 255 }
+        latitude: { type: number, nullable: true, minimum: -90, maximum: 90 }
+        longitude: { type: number, nullable: true, minimum: -180, maximum: 180 }
+        isDefault: { type: boolean }
+    CustomerAddress:
+      allOf:
+        - $ref: '#/components/schemas/CustomerAddressRequest'
+        - type: object
+          properties:
+            id: { type: string, format: uuid }
+            createdAtUtc: { type: string, format: date-time }
+    AiSummary:
+      type: object
+      properties:
+        orderId: { type: string, format: uuid }
+        trackingCode: { type: string }
+        text: { type: string }
+        source: { type: string, enum: [llm, rule], description: "llm = AI viết, rule = server tự ghép" }
+        model: { type: string, nullable: true }
+        generatedAtUtc: { type: string, format: date-time }
+        note: { type: string, nullable: true }
+    AiInsights:
+      type: object
+      properties:
+        fromUtc: { type: string, format: date-time }
+        toUtc: { type: string, format: date-time }
+        points: { type: array, items: { type: string } }
+        source: { type: string, enum: [llm, rule] }
+        model: { type: string, nullable: true }
+        generatedAtUtc: { type: string, format: date-time }
+        note: { type: string, nullable: true }
+    StationPoint:
+      type: object
+      properties:
+        name: { type: string }
+        latitude: { type: number }
+        longitude: { type: number }
     UserRole:
       type: string
       enum: [Customer, Dispatcher, StationOperator, Manager, Admin]
@@ -794,10 +1207,12 @@ components:
 
     UserInfo:
       type: object
+      description: Hồ sơ của người đang đăng nhập (v0.11 đọc từ CSDL, có số điện thoại).
       properties:
         id: { type: string, format: uuid }
         email: { type: string, format: email }
-        name: { type: string }
+        fullName: { type: string }
+        phone: { type: string, nullable: true }
         roles:
           type: array
           items: { $ref: '#/components/schemas/UserRole' }
@@ -812,6 +1227,54 @@ components:
         longitude: { type: number, minimum: -180, maximum: 180 }
         status: { $ref: '#/components/schemas/StationStatus' }
         createdAtUtc: { type: string, format: date-time }
+        capacity: { type: integer, minimum: 1, maximum: 50, description: Số kiện trạm chứa cùng lúc (v0.11) }
+
+    StationLoad:
+      type: object
+      properties:
+        stationId: { type: string, format: uuid }
+        incoming: { type: integer, description: Đơn đã gán drone hoặc đang bay tới }
+        waiting: { type: integer, description: Kiện đã tới, chờ khách nhận }
+        outgoing: { type: integer, description: Đơn sẽ cất cánh từ trạm (Pending, Approved, Scheduled) }
+
+    StationReport:
+      type: object
+      properties:
+        station: { type: string }
+        sent: { type: integer }
+        received: { type: integer }
+        completed: { type: integer }
+        failed: { type: integer }
+        successRatePct: { type: number }
+        avgDeliveryMinutes: { type: number, nullable: true }
+
+    ProfileRequest:
+      type: object
+      required: [fullName]
+      properties:
+        fullName: { type: string, minLength: 2, maxLength: 100 }
+        phone: { type: string, nullable: true, pattern: '^\+?[0-9 .]{8,15}$' }
+
+    Customer:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        fullName: { type: string }
+        phone: { type: string, nullable: true }
+        isActive: { type: boolean }
+        createdAtUtc: { type: string, format: date-time }
+        totalOrders: { type: integer }
+        completedOrders: { type: integer }
+        activeOrders: { type: integer }
+        lastOrderAtUtc: { type: string, format: date-time, nullable: true }
+
+    CustomerDetail:
+      type: object
+      properties:
+        customer: { $ref: '#/components/schemas/Customer' }
+        addresses: { type: array, items: { type: object } }
+        recentOrders: { type: array, items: { $ref: '#/components/schemas/OrderSummary' } }
 
     StationRequest:
       type: object
@@ -821,6 +1284,7 @@ components:
         latitude: { type: number, minimum: -90, maximum: 90 }
         longitude: { type: number, minimum: -180, maximum: 180 }
         status: { $ref: '#/components/schemas/StationStatus' }
+        capacity: { type: integer, minimum: 1, maximum: 50, default: 2 }
 
     StationRef:
       type: object
@@ -844,12 +1308,12 @@ components:
         description: { type: string, maxLength: 255, nullable: true }
         weightKg:
           type: number
-          minimum: 0
-          exclusiveMinimum: true
+          minimum: 0.01
           maximum: 50
-        lengthCm: { type: number, minimum: 0, exclusiveMinimum: true }
-        widthCm: { type: number, minimum: 0, exclusiveMinimum: true }
-        heightCm: { type: number, minimum: 0, exclusiveMinimum: true }
+          description: Thực tế còn phải ≤ tải tối đa của drone lớn nhất (BR-04)
+        lengthCm: { type: number, minimum: 0.1, maximum: 100 }
+        widthCm: { type: number, minimum: 0.1, maximum: 100 }
+        heightCm: { type: number, minimum: 0.1, maximum: 100 }
         imageKey: { type: string, nullable: true }
 
     PackageDto:
@@ -875,6 +1339,8 @@ components:
           description: Phải khác trạm đi.
         deliveryAddressId: { type: string, format: uuid, nullable: true }
         notes: { type: string, nullable: true }
+        recipientName: { type: string, maxLength: 100, nullable: true, description: Trống thì lấy họ tên của khách (v0.11) }
+        recipientPhone: { type: string, maxLength: 20, nullable: true, description: Trống thì lấy số điện thoại của khách (v0.11) }
         package: { $ref: '#/components/schemas/PackageInput' }
 
     Order:
@@ -884,7 +1350,7 @@ components:
         id: { type: string, format: uuid }
         trackingCode:
           type: string
-          description: Mã tra cứu ngắn cho khách, ví dụ `DR1A2B3C4D`.
+          description: Mã tra cứu cho khách, dạng `SDD-` + 16 ký tự hex (20 ký tự), ví dụ `SDD-7f3a21c9e04b4d1a`.
         status: { $ref: '#/components/schemas/OrderStatus' }
         customerId: { type: string, format: uuid }
         originStation: { $ref: '#/components/schemas/StationRef' }
@@ -898,6 +1364,9 @@ components:
         notes: { type: string, nullable: true }
         createdAtUtc: { type: string, format: date-time }
         updatedAtUtc: { type: string, format: date-time }
+        recipientName: { type: string, nullable: true }
+        recipientPhone: { type: string, nullable: true }
+        deliveryAddressId: { type: string, format: uuid, nullable: true }
 
     OrderSummary:
       type: object
@@ -910,6 +1379,8 @@ components:
         destinationStationName: { type: string }
         eta: { type: string, format: date-time, nullable: true }
         createdAtUtc: { type: string, format: date-time }
+        recipientName: { type: string, nullable: true }
+        recipientPhone: { type: string, nullable: true }
 
     OrderPage:
       type: object

@@ -14,7 +14,7 @@ Luật đổi trạng thái nằm ở `Domain/Models/OrderStateMachine.cs` ([Ord
 |---|---|---|---|---|
 | GET | `/orders/eta` | Customer | query `originStationId`, `destinationStationId`, `weightKg` | – |
 | POST | `/orders` | Customer | `OrderRequest` | → `Pending` |
-| GET | `/orders` | Mọi người (khách chỉ thấy đơn mình) | query `page`, `pageSize`, `status` | – |
+| GET | `/orders` | Mọi người (khách chỉ thấy đơn mình) | query `page`, `pageSize`, `status`, `q` (mã đơn, v0.11) | – |
 | GET | `/orders/{id}` | Chủ đơn, nhân viên | – | – |
 | PUT | `/orders/{id}` | Customer | `OrderRequest` | – (chỉ khi `Pending`) |
 | POST | `/orders/{id}/cancel` | Customer | – | `Pending` → `Cancelled` |
@@ -27,12 +27,38 @@ Luật đổi trạng thái nằm ở `Domain/Models/OrderStateMachine.cs` ([Ord
 | POST | `/orders/{id}/fail` | Dispatcher, Manager, Admin | `{ "reason": "..." }` | `InTransit`/`ArrivedAtStation` → `Failed` |
 | GET | `/orders/{id}/history` | Chủ đơn, nhân viên | – | – |
 
-Mọi endpoint đổi trạng thái trả về `OrderResponse` của đơn sau khi đổi.
+Mọi endpoint đổi trạng thái trả về `OrderResponse` (bản rút gọn, chỉ có id trạm) của đơn sau khi đổi.
+
+## POST /api/v1/orders/{id}/return (KAN-57)
+
+Dispatcher, Manager, Admin. Body `{ "reason": "..." }` (bắt buộc). Chỉ nhận đơn đang `Failed` → chuyển `Cancelled`, ghi lịch sử "Hủy và hoàn trả: <lý do>", gửi thông báo cho khách. Đơn trạng thái khác → 409. Dùng khi giao thất bại mà không giao lại nữa (khách đổi ý, hàng hỏng...).
+
+## GET /api/v1/orders/{id}/tracking (v0.9)
+
+Ai đăng nhập cũng gọi được, khách chỉ xem đơn của mình. Trả `TrackingResponse`: `latitude`, `longitude` của drone, `progressPct` (0–100), `droneCode`, `origin` / `destination` (`{ name, latitude, longitude }`), `departedAtUtc`, `etaUtc`. Vị trí là giả lập, công thức ở `Services/TrackingService.md`. Đơn chưa bay → đứng ở trạm đi (0 %); đã tới trạm / hoàn tất → ở trạm đến (100 %).
+
+## POST /api/v1/orders/{id}/ai-summary (v0.10, KAN-62)
+
+Ai đăng nhập cũng gọi được, khách chỉ tóm tắt được đơn của mình (đơn người khác → 404). Không có body. Trả `AiSummaryResponse`:
+
+```json
+{ "orderId": "...", "trackingCode": "SDD-...", "text": "Đơn SDD-... chở kiện 1 kg ...", "source": "llm", "model": "gpt-4o-mini", "generatedAtUtc": "...", "note": null }
+```
+
+`source` = `llm` (AI viết) hoặc `rule` (chưa có API key / LLM lỗi, server tự ghép; `note` ghi lý do). Dùng POST vì mỗi lần gọi là 1 lần gọi LLM, không nên để trình duyệt tự gọi lại như GET. Cách làm: `Services/AiInsightService.md`.
+
+## GET /api/v1/orders/{id}/package-image
+
+Ai đăng nhập cũng gọi được nhưng khách chỉ mở được ảnh đơn của mình. Trả thẳng file ảnh (`image/jpeg`, `image/png`...) đọc từ MinIO. Đơn không có ảnh → 404. Web và mobile gọi kèm token để hiện ảnh kiện.
+
+## GET /api/v1/orders/{id}
+
+Trả `OrderDetailResponse` đúng như schema `Order` trong `docs/openapi.yaml`: có `originStation` và `destinationStation` dạng `{ id, name }`, `package` đầy đủ (cân nặng, kích thước, `imageKey`), các mốc `approvedAtUtc`, `scheduledAtUtc`, `completedAtUtc`, `failureReason`, `notes`, `recipientName`, `recipientPhone`, `deliveryAddressId` (v0.11, app dùng để điền sẵn khi sửa đơn). Trước v0.7 chỗ này trả bản rút gọn nên app mobile đọc chi tiết đơn bị lỗi. Web dùng `package.weightKg` để lọc drone đủ tải khi gán.
 
 ## Phạm vi dữ liệu
 
 - `User.UserId()`: dùng cho thao tác chỉ khách được làm (tạo, sửa, hủy). Service tự kiểm tra đơn có thuộc khách đó không.
-- `User.CustomerScope()`: dùng cho thao tác xem. Nhân viên (Dispatcher, Manager, Admin) → `null` = xem mọi đơn; khách → id của mình. Đơn của người khác trả **404** chứ không phải 403, để không lộ là đơn đó có tồn tại.
+- `User.CustomerScope()`: dùng cho thao tác xem. Nhân viên (Dispatcher, Station Operator, Manager, Admin) → `null` = xem mọi đơn; khách → id của mình. Đơn của người khác trả **404** chứ không phải 403, để không lộ là đơn đó có tồn tại.
 
 ## POST /api/v1/orders
 
@@ -42,6 +68,8 @@ Mọi endpoint đổi trạng thái trả về `OrderResponse` của đơn sau k
   "destinationStationId": "uuid trạm nhận",
   "deliveryAddressId": null,
   "notes": "Giao giờ hành chính",
+  "recipientName": "Trần Thị Bình",
+  "recipientPhone": "0912345678",
   "package": {
     "description": "Sách",
     "weightKg": 1.2,
@@ -54,14 +82,14 @@ Mọi endpoint đổi trạng thái trả về `OrderResponse` của đơn sau k
 | Kết quả | Khi nào |
 |---|---|
 | 201 + `OrderResponse` | Tạo được |
-| 400 | Thiếu trường / sai khoảng (`weightKg` 0.01–50); trạm trùng hoặc không tồn tại; địa chỉ không phải của mình; không drone nào chở nổi |
+| 400 | Thiếu trường / sai khoảng (`weightKg` 0.01–50); trạm trùng, không tồn tại hoặc đang bảo trì; số điện thoại người nhận sai dạng; địa chỉ không phải của mình; không drone nào chở nổi |
 | 401 / 403 | Chưa đăng nhập / không phải Customer |
 
 ## GET /api/v1/orders
 
-Query: `page` (từ 1), `pageSize` (mặc định 20, tối đa 100), `status` (một giá trị của `OrderStatus`, không phân biệt hoa thường; sai → 400).
+Query: `page` (từ 1), `pageSize` (mặc định 20, tối đa 100), `status` (một giá trị của `OrderStatus`, không phân biệt hoa thường; sai → 400), `q` (v0.11: một phần mã đơn, không phân biệt hoa thường, tối đa 50 ký tự).
 
-Trả `OrderPageResponse`: `items` (mã đơn, trạng thái, tên trạm gửi/nhận, ETA, ngày tạo), `page`, `pageSize`, `totalItems`. Mới nhất trước.
+Trả `OrderPageResponse`: `items` (mã đơn, trạng thái, tên trạm gửi/nhận, ETA, ngày tạo, người nhận), `page`, `pageSize`, `totalItems`. Mới nhất trước.
 
 ## PUT /api/v1/orders/{id}
 
@@ -97,7 +125,7 @@ Query: `originStationId`, `destinationStationId`, `weightKg` (0.01–50). Trả 
 |---|---|
 | 400 | Giờ bay ở quá khứ; kiện nặng hơn tải tối đa của drone |
 | 404 | Không có drone / đơn |
-| 409 | Drone không `Idle`; đơn không ở `Approved` hoặc `Failed` |
+| 409 | Drone không `Idle`; đơn không ở `Approved` hoặc `Failed`; trạm nhận đang bảo trì hoặc đã đủ sức chứa (v0.11) |
 
 ## POST /api/v1/orders/{id}/start · /arrive
 

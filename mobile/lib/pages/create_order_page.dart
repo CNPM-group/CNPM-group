@@ -1,13 +1,17 @@
 import 'dart:io';
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../api.dart';
 import '../models.dart';
 
+/// Tạo đơn mới, hoặc sửa đơn còn Pending khi truyền [editing] (v0.11).
 class CreateOrderPage extends StatefulWidget {
-  const CreateOrderPage({super.key});
+  final Order? editing;
+  const CreateOrderPage({super.key, this.editing});
 
   @override
   State<CreateOrderPage> createState() => _CreateOrderPageState();
@@ -21,24 +25,36 @@ class _CreateOrderPageState extends State<CreateOrderPage> {
   final _height = TextEditingController();
   final _description = TextEditingController();
   final _notes = TextEditingController();
+  final _recipientName = TextEditingController();
+  final _recipientPhone = TextEditingController();
 
   List<Station> _stations = [];
+  List<CustomerAddress> _addresses = [];
   String? _origin;
   String? _destination;
+  String? _addressId;
   XFile? _image;
   bool _loading = true;
   bool _saving = false;
   String? _error;
+  ({double km, double minutes})? _eta;
+  String? _etaError;
+  Timer? _etaDebounce;
+  String? _existingImageKey;
+
+  bool get _isEdit => widget.editing != null;
 
   @override
   void initState() {
     super.initState();
     _loadStations();
+    _weight.addListener(_scheduleEta);
   }
 
   @override
   void dispose() {
-    for (final c in [_weight, _length, _width, _height, _description, _notes]) {
+    _etaDebounce?.cancel();
+    for (final c in [_weight, _length, _width, _height, _description, _notes, _recipientName, _recipientPhone]) {
       c.dispose();
     }
     super.dispose();
@@ -47,11 +63,16 @@ class _CreateOrderPageState extends State<CreateOrderPage> {
   Future<void> _loadStations() async {
     try {
       final stations = await Api.instance.getStations();
+      final addresses = await Api.instance.getAddresses().catchError((_) => <CustomerAddress>[]);
       if (!mounted) return;
       setState(() {
         _stations = stations;
+        _addresses = addresses;
+        _addressId = addresses.where((a) => a.isDefault).map((a) => a.id).firstOrNull;
         _loading = false;
       });
+      final o = widget.editing;
+      if (o != null) _prefill(o);
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() {
@@ -61,9 +82,75 @@ class _CreateOrderPageState extends State<CreateOrderPage> {
     }
   }
 
+  // Sửa đơn: điền sẵn dữ liệu cũ. Không chọn ảnh mới thì giữ ảnh cũ.
+  void _prefill(Order o) {
+    final p = o.package;
+    setState(() {
+      _origin = _stations.any((s) => s.id == o.originStationId) ? o.originStationId : null;
+      _destination = _stations.any((s) => s.id == o.destinationStationId) ? o.destinationStationId : null;
+      _addressId = _addresses.any((a) => a.id == o.deliveryAddressId) ? o.deliveryAddressId : null;
+      _weight.text = _fmt(p.weightKg);
+      _length.text = _fmt(p.lengthCm);
+      _width.text = _fmt(p.widthCm);
+      _height.text = _fmt(p.heightCm);
+      _description.text = p.description ?? '';
+      _notes.text = o.notes ?? '';
+      _recipientName.text = o.recipientName ?? '';
+      _recipientPhone.text = o.recipientPhone ?? '';
+      _existingImageKey = p.imageKey;
+    });
+    _refreshEta();
+  }
+
+  String _fmt(double v) => v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toString();
+
   Future<void> _pick(ImageSource source) async {
     final file = await ImagePicker().pickImage(source: source, maxWidth: 1600, imageQuality: 85);
     if (file != null && mounted) setState(() => _image = file);
+  }
+
+  void _scheduleEta() {
+    _etaDebounce?.cancel();
+    _etaDebounce = Timer(const Duration(milliseconds: 500), _refreshEta);
+  }
+
+  Future<void> _refreshEta() async {
+    final weight = _num(_weight.text);
+    if (_origin == null || _destination == null || _origin == _destination || weight == null || weight <= 0) {
+      if (mounted) setState(() => _eta = null);
+      return;
+    }
+    try {
+      final eta = await Api.instance.estimateEta(_origin!, _destination!, weight);
+      if (!mounted) return;
+      setState(() {
+        _eta = eta;
+        _etaError = null;
+      });
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _eta = null;
+        _etaError = e.message;
+      });
+    }
+  }
+
+  Widget _etaCard() {
+    if (_eta == null && _etaError == null) return const SizedBox.shrink();
+    final scheme = Theme.of(context).colorScheme;
+    final eta = _eta;
+    return Card(
+      color: eta == null ? scheme.errorContainer : scheme.secondaryContainer,
+      margin: const EdgeInsets.only(top: 12),
+      child: ListTile(
+        leading: Icon(eta == null ? Icons.error_outline : Icons.schedule),
+        title: Text(eta == null
+            ? _etaError!
+            : 'Bay khoảng ${eta.minutes.round()} phút · ${eta.km.toStringAsFixed(1)} km'),
+        subtitle: eta == null ? null : const Text('Tính từ lúc drone cất cánh, chưa gồm thời gian chờ duyệt'),
+      ),
+    );
   }
 
   double? _num(String v) => double.tryParse(v.trim().replaceAll(',', '.'));
@@ -86,14 +173,26 @@ class _CreateOrderPageState extends State<CreateOrderPage> {
       _error = null;
     });
     try {
-      String? imageKey;
+      String? imageKey = _existingImageKey;
       if (_image != null) {
-        imageKey = await Api.instance.uploadImage(_image!.path, _image!.name);
+        try {
+          imageKey = await Api.instance.uploadImage(_image!.path, _image!.name);
+        } on ApiException catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Không tải được ảnh (${e.message}), đơn vẫn được tạo không kèm ảnh.')),
+            );
+          }
+        }
       }
       final body = <String, dynamic>{
         'originStationId': _origin,
         'destinationStationId': _destination,
+        'deliveryAddressId': _addressId,
         'notes': _notes.text.trim().isEmpty ? null : _notes.text.trim(),
+        // Bỏ trống thì server lấy tên + số điện thoại của chính khách (v0.11).
+        'recipientName': _recipientName.text.trim().isEmpty ? null : _recipientName.text.trim(),
+        'recipientPhone': _recipientPhone.text.trim().isEmpty ? null : _recipientPhone.text.trim(),
         'package': {
           'description': _description.text.trim().isEmpty ? null : _description.text.trim(),
           'weightKg': _num(_weight.text),
@@ -103,7 +202,11 @@ class _CreateOrderPageState extends State<CreateOrderPage> {
           'imageKey': imageKey,
         },
       };
-      await Api.instance.createOrder(body);
+      if (_isEdit) {
+        await Api.instance.updateOrder(widget.editing!.id, body);
+      } else {
+        await Api.instance.createOrder(body);
+      }
       if (!mounted) return;
       Navigator.of(context).pop(true);
     } on ApiException catch (e) {
@@ -137,7 +240,7 @@ class _CreateOrderPageState extends State<CreateOrderPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Tạo đơn hàng')),
+      appBar: AppBar(title: Text(_isEdit ? 'Sửa đơn ${widget.editing!.trackingCode}' : 'Tạo đơn hàng')),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : Form(
@@ -145,9 +248,36 @@ class _CreateOrderPageState extends State<CreateOrderPage> {
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
-                  _stationDropdown('Trạm đi', _origin, (v) => setState(() => _origin = v)),
+                  _stationDropdown('Trạm đi', _origin, (v) {
+                    setState(() => _origin = v);
+                    _refreshEta();
+                  }),
                   const SizedBox(height: 12),
-                  _stationDropdown('Trạm đến', _destination, (v) => setState(() => _destination = v)),
+                  _stationDropdown('Trạm đến', _destination, (v) {
+                    setState(() => _destination = v);
+                    _refreshEta();
+                  }),
+                  if (_addresses.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String?>(
+                      value: _addressId,
+                      isExpanded: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Địa chỉ nhận (không bắt buộc)',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: [
+                        const DropdownMenuItem<String?>(value: null, child: Text('Không chọn')),
+                        ..._addresses.map(
+                          (a) => DropdownMenuItem<String?>(
+                            value: a.id,
+                            child: Text('${a.label} – ${a.addressLine}', overflow: TextOverflow.ellipsis),
+                          ),
+                        ),
+                      ],
+                      onChanged: (v) => setState(() => _addressId = v),
+                    ),
+                  ],
                   const SizedBox(height: 20),
                   Text('Thông tin kiện hàng', style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 12),
@@ -157,14 +287,15 @@ class _CreateOrderPageState extends State<CreateOrderPage> {
                   ),
                   const SizedBox(height: 12),
                   _numberField(_weight, 'Cân nặng (kg)', max: 50),
+                  _etaCard(),
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      Expanded(child: _numberField(_length, 'Dài (cm)')),
+                      Expanded(child: _numberField(_length, 'Dài (cm)', max: 100)),
                       const SizedBox(width: 8),
-                      Expanded(child: _numberField(_width, 'Rộng (cm)')),
+                      Expanded(child: _numberField(_width, 'Rộng (cm)', max: 100)),
                       const SizedBox(width: 8),
-                      Expanded(child: _numberField(_height, 'Cao (cm)')),
+                      Expanded(child: _numberField(_height, 'Cao (cm)', max: 100)),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -191,6 +322,26 @@ class _CreateOrderPageState extends State<CreateOrderPage> {
                     ),
                   ],
                   const SizedBox(height: 12),
+                  Text('Người nhận (bỏ trống nếu bạn tự nhận)', style: Theme.of(context).textTheme.titleSmall),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _recipientName,
+                    maxLength: 100,
+                    decoration: const InputDecoration(labelText: 'Tên người nhận', border: OutlineInputBorder()),
+                  ),
+                  const SizedBox(height: 4),
+                  TextFormField(
+                    controller: _recipientPhone,
+                    keyboardType: TextInputType.phone,
+                    maxLength: 20,
+                    decoration: const InputDecoration(labelText: 'SĐT người nhận', border: OutlineInputBorder()),
+                    validator: (v) {
+                      final t = (v ?? '').trim();
+                      if (t.isEmpty) return null;
+                      return RegExp(r'^\+?[0-9 .]{8,15}$').hasMatch(t) ? null : 'Số điện thoại 8–15 chữ số';
+                    },
+                  ),
+                  const SizedBox(height: 4),
                   TextFormField(
                     controller: _notes,
                     maxLines: 2,
@@ -204,7 +355,7 @@ class _CreateOrderPageState extends State<CreateOrderPage> {
                     ),
                   FilledButton(
                     onPressed: _saving ? null : _submit,
-                    child: Text(_saving ? 'Đang gửi...' : 'Tạo đơn'),
+                    child: Text(_saving ? 'Đang gửi...' : (_isEdit ? 'Lưu thay đổi' : 'Tạo đơn')),
                   ),
                 ],
               ),

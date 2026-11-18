@@ -45,6 +45,30 @@ public sealed class UserRepository(UserManager<AppUser> users) : IUserRepository
         EnsureSucceeded(await users.UpdateAsync(entity));
     }
 
+    public async Task<IReadOnlyList<User>> ListInRoleAsync(string role)
+    {
+        var entities = await users.GetUsersInRoleAsync(role);
+        return entities.OrderBy(u => u.Email).Select(ToDomain).ToList();
+    }
+
+    public async Task<User> UpdateProfileAsync(Guid userId, string fullName, string? phone)
+    {
+        var entity = await FindAsync(userId);
+        entity.FullName = fullName;
+        entity.PhoneNumber = phone;
+        EnsureSucceeded(await users.UpdateAsync(entity));
+        return ToDomain(entity);
+    }
+
+    public async Task ChangePasswordAsync(Guid userId, string currentPassword, string newPassword)
+    {
+        var entity = await FindAsync(userId);
+        var result = await users.ChangePasswordAsync(entity, currentPassword, newPassword);
+        if (result.Errors.Any(e => e.Code == "PasswordMismatch"))
+            throw new ValidationException("Mật khẩu hiện tại không đúng.");
+        EnsureSucceeded(result);
+    }
+
     public async Task<bool> CheckPasswordAsync(Guid userId, string password)
     {
         var entity = await users.FindByIdAsync(userId.ToString());

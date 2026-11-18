@@ -13,8 +13,8 @@ public sealed class CustomerAddressService(ICustomerAddressRepository addresses)
 
     public async Task<CustomerAddress> CreateAsync(Guid customerId, CustomerAddress input, CancellationToken ct = default)
     {
-        if (input.IsDefault && await addresses.HasOtherDefaultAsync(customerId, null, ct))
-            throw new ConflictException("Bạn đã có địa chỉ mặc định.");
+        if (input.IsDefault)
+            await addresses.ClearDefaultAsync(customerId, null, ct);
 
         var address = new CustomerAddress
         {
@@ -34,8 +34,8 @@ public sealed class CustomerAddressService(ICustomerAddressRepository addresses)
     {
         var address = await GetAsync(customerId, id, ct);
 
-        if (input.IsDefault && await addresses.HasOtherDefaultAsync(customerId, id, ct))
-            throw new ConflictException("Bạn đã có địa chỉ mặc định khác.");
+        if (input.IsDefault)
+            await addresses.ClearDefaultAsync(customerId, id, ct);
 
         address.Label = input.Label.Trim();
         address.AddressLine = input.AddressLine.Trim();

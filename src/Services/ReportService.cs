@@ -36,6 +36,39 @@ public sealed class ReportService(IReportRepository reports)
             rows.GroupBy(r => DateOnly.FromDateTime(r.CreatedAtUtc)).Select(g => new DailyCount(g.Key, g.Count())).OrderBy(d => d.Day).ToList());
     }
 
+    // FR11: hiệu quả từng trạm. Gửi = số đơn đi từ trạm, Nhận = số đơn tới trạm;
+    // hoàn tất / thất bại / tỷ lệ / thời gian TB tính theo trạm nhận (nơi khách nhập OTP).
+    public async Task<IReadOnlyList<StationReport>> StationsAsync(DateTime? from, DateTime? to, CancellationToken ct = default)
+    {
+        var (fromUtc, toUtc) = Range(from, to);
+        var rows = await reports.ExportRowsAsync(fromUtc, toUtc, ct);
+
+        var names = rows.Select(r => r.OriginStation).Concat(rows.Select(r => r.DestinationStation)).Distinct();
+
+        return names
+            .Select(name =>
+            {
+                var received = rows.Where(r => r.DestinationStation == name).ToList();
+                var completed = received.Count(r => r.Status == nameof(OrderStatus.Completed));
+                var failed = received.Count(r => r.Status == nameof(OrderStatus.Failed));
+                var minutes = received
+                    .Where(r => r.CompletedAtUtc is not null)
+                    .Select(r => (r.CompletedAtUtc!.Value - r.CreatedAtUtc).TotalMinutes)
+                    .ToList();
+
+                return new StationReport(
+                    name,
+                    rows.Count(r => r.OriginStation == name),
+                    received.Count,
+                    completed,
+                    failed,
+                    completed + failed == 0 ? 0 : Math.Round(completed * 100.0 / (completed + failed), 1),
+                    minutes.Count == 0 ? null : Math.Round(minutes.Average(), 1));
+            })
+            .OrderByDescending(s => s.Sent + s.Received)
+            .ToList();
+    }
+
     public async Task<string> ExportCsvAsync(DateTime? from, DateTime? to, CancellationToken ct = default)
     {
         var (fromUtc, toUtc) = Range(from, to);

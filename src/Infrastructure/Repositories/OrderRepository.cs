@@ -14,7 +14,7 @@ public sealed class OrderRepository(AppDbContext db) : IOrderRepository
         db.Packages.FirstOrDefaultAsync(p => p.Id == packageId, ct);
 
     public async Task<PagedResult<OrderSummary>> PageAsync(
-        Guid? customerId, string? status, int page, int pageSize, CancellationToken ct = default)
+        Guid? customerId, string? status, string? search, int page, int pageSize, CancellationToken ct = default)
     {
         var query = db.DeliveryOrders.AsNoTracking();
 
@@ -23,6 +23,12 @@ public sealed class OrderRepository(AppDbContext db) : IOrderRepository
 
         if (status is not null)
             query = query.Where(o => o.Status == status);
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var code = search.Trim().ToUpper();
+            query = query.Where(o => o.TrackingCode.ToUpper().Contains(code));
+        }
 
         var total = await query.CountAsync(ct);
 
@@ -38,11 +44,36 @@ public sealed class OrderRepository(AppDbContext db) : IOrderRepository
                 db.Stations.Where(s => s.Id == o.OriginStationId).Select(s => s.Name).FirstOrDefault() ?? "",
                 db.Stations.Where(s => s.Id == o.DestinationStationId).Select(s => s.Name).FirstOrDefault() ?? "",
                 o.EtaUtc,
-                o.CreatedAtUtc))
+                o.CreatedAtUtc,
+                o.RecipientName,
+                o.RecipientPhone))
             .ToListAsync(ct);
 
         return new PagedResult<OrderSummary>(items, page, pageSize, total);
     }
+
+    public async Task<IReadOnlyDictionary<Guid, CustomerOrderStats>> StatsByCustomerAsync(CancellationToken ct = default)
+    {
+        var rows = await db.DeliveryOrders.AsNoTracking()
+            .GroupBy(o => o.CustomerId)
+            .Select(g => new
+            {
+                CustomerId = g.Key,
+                Total = g.Count(),
+                Completed = g.Count(o => o.Status == "Completed"),
+                Active = g.Count(o => o.Status != "Completed" && o.Status != "Cancelled" && o.Status != "Rejected"),
+                Last = g.Max(o => (DateTime?)o.CreatedAtUtc)
+            })
+            .ToListAsync(ct);
+
+        return rows.ToDictionary(r => r.CustomerId, r => new CustomerOrderStats(r.Total, r.Completed, r.Active, r.Last));
+    }
+
+    public Task<int> CountIncomingAsync(Guid destinationStationId, Guid exceptOrderId, CancellationToken ct = default) =>
+        db.DeliveryOrders.CountAsync(o =>
+            o.DestinationStationId == destinationStationId &&
+            o.Id != exceptOrderId &&
+            (o.Status == "Scheduled" || o.Status == "InTransit" || o.Status == "ArrivedAtStation"), ct);
 
     public async Task<IReadOnlyList<OrderStatusHistory>> GetHistoryAsync(Guid orderId, CancellationToken ct = default) =>
         await db.OrderStatusHistories.AsNoTracking()

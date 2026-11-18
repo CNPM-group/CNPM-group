@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using SmartDrone.Api;
 using SmartDrone.Infrastructure.Databases;
+using SmartDrone.Infrastructure.Realtime;
 
 namespace SmartDrone;
 
@@ -20,6 +21,7 @@ public static class CreateApp
         builder.Services.AddJwtAuthentication(jwt);
         builder.Services.AddAppCors(builder.Configuration);
         builder.Services.AddControllers().AddApiResponses();
+        builder.Services.AddSignalR();
         builder.Services.AddProblemDetails();
         builder.Services.AddExceptionHandler<ErrorHandler>();
         builder.Services.AddHealthChecks().AddDbContextCheck<AppDbContext>();
@@ -43,6 +45,7 @@ public static class CreateApp
         app.UseAuthorization();
 
         app.MapControllers();
+        app.MapHub<DeliveryHub>(DeliveryHub.Path);
         app.MapHealthChecks("/health");
 
         return app;
@@ -74,6 +77,13 @@ public static class CreateApp
                     {
                         if (ctx.Request.Cookies.TryGetValue(Config.AuthCookie, out var token))
                             ctx.Token = token;
+
+                        // Trình duyệt không gửi được header Authorization khi mở WebSocket,
+                        // nên client SignalR gửi token qua query ?access_token=...
+                        var hubToken = ctx.Request.Query["access_token"].ToString();
+                        if (!string.IsNullOrEmpty(hubToken) && ctx.HttpContext.Request.Path.StartsWithSegments("/hubs"))
+                            ctx.Token = hubToken;
+
                         return Task.CompletedTask;
                     }
                 };

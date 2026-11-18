@@ -33,12 +33,13 @@ public class OrdersController(OrderService orders, EtaService eta, DeliveryServi
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = ApiConstants.DefaultPageSize,
         [FromQuery] string? status = null,
+        [FromQuery] string? q = null,
         CancellationToken ct = default) =>
-        Ok(OrderPageResponse.From(await orders.PageAsync(User.CustomerScope(), status, page, pageSize, ct)));
+        Ok(OrderPageResponse.From(await orders.PageAsync(User.CustomerScope(), status, q, page, pageSize, ct)));
 
     [HttpGet("{id:guid}")]
-    public async Task<ActionResult<OrderResponse>> GetById(Guid id, CancellationToken ct) =>
-        Ok(OrderResponse.From(await orders.GetAsync(User.CustomerScope(), id, ct)));
+    public async Task<ActionResult<OrderDetailResponse>> GetById(Guid id, CancellationToken ct) =>
+        Ok(OrderDetailResponse.From(await orders.GetDetailAsync(User.CustomerScope(), id, ct)));
 
     [HttpPut("{id:guid}")]
     [Authorize(Roles = Roles.Customer)]
@@ -87,6 +88,27 @@ public class OrdersController(OrderService orders, EtaService eta, DeliveryServi
     [Authorize(Roles = Roles.DispatchStaff)]
     public async Task<ActionResult<OrderResponse>> Fail(Guid id, FailRequest request, CancellationToken ct) =>
         Ok(OrderResponse.From(await delivery.FailAsync(User.UserId(), id, request.Reason, ct)));
+
+    [HttpPost("{id:guid}/return")]
+    [Authorize(Roles = Roles.DispatchStaff)]
+    public async Task<ActionResult<OrderResponse>> ReturnToSender(Guid id, FailRequest request, CancellationToken ct) =>
+        Ok(OrderResponse.From(await delivery.ReturnAsync(User.UserId(), id, request.Reason, ct)));
+
+    [HttpGet("{id:guid}/tracking")]
+    public async Task<ActionResult<TrackingResponse>> GetTracking(Guid id, [FromServices] TrackingService tracking, CancellationToken ct) =>
+        Ok(TrackingResponse.From(await tracking.GetAsync(User.CustomerScope(), id, ct)));
+
+    // KAN-62: AI viết tóm tắt chuyến giao. Khách chỉ tóm tắt được đơn của mình.
+    [HttpPost("{id:guid}/ai-summary")]
+    public async Task<ActionResult<AiSummaryResponse>> AiSummary(Guid id, [FromServices] AiInsightService ai, CancellationToken ct) =>
+        Ok(AiSummaryResponse.From(await ai.SummarizeOrderAsync(User.CustomerScope(), id, ct)));
+
+    [HttpGet("{id:guid}/package-image")]
+    public async Task<IActionResult> GetPackageImage(Guid id, [FromServices] PackageImageService images, CancellationToken ct)
+    {
+        var file = await images.OpenForOrderAsync(User.CustomerScope(), id, ct);
+        return File(file.Content, file.ContentType);
+    }
 
     [HttpGet("{id:guid}/history")]
     public async Task<ActionResult<IReadOnlyList<OrderStatusHistoryResponse>>> GetHistory(Guid id, CancellationToken ct) =>

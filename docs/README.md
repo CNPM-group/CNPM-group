@@ -5,6 +5,9 @@ Tài liệu của dự án. Code nằm ở `src/`, ở đây chỉ có mô tả.
 | File | Nội dung | Dùng khi nào |
 |---|---|---|
 | `report/BaoCao_SmartDroneDelivery.md` | Báo cáo đồ án v0.6 (SPMP/SRS/SDD/Test/Release), đọc thẳng trên GitHub | Xem báo cáo, ôn trước khi thầy hỏi |
+| `report/BaoCao_v0.7_Web_Mobile.md`, `report/BaoCao_v0.8.md`, `report/BaoCao_v0.9.md`, `report/BaoCao_v0.10.md` | Báo cáo các đợt v0.7 (web React, mobile OTP), v0.8 (SignalR, MinIO, hủy đơn, quản lý drone, AI, địa chỉ), v0.9 (giả lập drone, theo dõi realtime, quản lý tài khoản) và v0.10 (AI tóm tắt chuyến giao, AI nhận xét vận hành) | Nộp kèm báo cáo chính, kịch bản demo |
+| `report/KiemThu_v0.8.md`, `report/KiemThu_v0.9.md`, `report/KiemThu_v0.10.md` | Bảng 38 test case (v0.8) + 18 (v0.9) + 12 (v0.10: AI, sửa lỗi xóa), cách kiểm, kết quả | Phần Kiểm thử của báo cáo và slide |
+| `postman/` | Postman collection 66 request tự kiểm toàn luồng + hướng dẫn chạy bằng newman – xem [postman/README.md](postman/README.md) | Kiểm backend thật trước khi demo |
 | `diagrams/` | 14 sơ đồ PNG + mã Mermaid `.mmd` (ngữ cảnh, use case, kiến trúc, ERD, state machine, lớp, sequence, BPMN) – xem [diagrams/README.md](diagrams/README.md) | Chèn vào báo cáo, slide |
 | `clean-architecture.md` | 4 tầng, bảng đối chiếu Flask ↔ C#, sequence diagram PlantUML, ví dụ tạo đơn đi qua từng tầng, các bước thêm chức năng | Đọc đầu tiên trước khi code |
 | `CONVENTIONS.md` | Quy ước Git (nhánh, commit, PR), bí mật, API, code | Trước khi tạo nhánh / mở PR |
@@ -24,6 +27,7 @@ Tài liệu của dự án. Code nằm ở `src/`, ở đây chỉ có mô tả.
 | `analytics/KPI_Definitions.md` | Định nghĩa các KPI (tỷ lệ thành công, thời gian giao...) | Làm dashboard |
 | `analytics/analytics_queries.sql` | Câu SQL thống kê đơn theo trạng thái, tỷ lệ thành công | Làm dashboard, kiểm tra số liệu |
 | `ai/ai-chatbot-prompt.md` | Prompt và luật của chatbot (chỉ dùng dữ liệu từ tool, không bịa) | Sửa `src/Services/AiService.cs` |
+| `ai/ai-summary-insights.md` | Prompt và luật của AI tóm tắt chuyến giao (KAN-62) và nhận xét vận hành, cách xử lý khi không có API key (v0.10) | Sửa `src/Services/AiInsightService.cs` |
 | `ai/KAN18_Feasibility_Report.md` | Mẫu báo cáo thử nghiệm LLM API (KAN-18) | Điền kết quả gọi `POST /api/v1/ai/feasibility-test` |
 | `reports/KAN16_KAN17_SmartDroneDelivery.docx` | Báo cáo KAN-16, KAN-17 | Nộp / tham khảo |
 

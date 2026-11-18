@@ -8,4 +8,5 @@ public interface IStationRepository
     Task AddAsync(LandingStation station, CancellationToken ct = default);
     Task UpdateAsync(LandingStation station, CancellationToken ct = default);
     Task DeleteAsync(LandingStation station, CancellationToken ct = default);
+    Task<IReadOnlyList<StationLoad>> LoadAsync(CancellationToken ct = default);
 }

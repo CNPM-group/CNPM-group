@@ -102,6 +102,14 @@ public class DeliveryOrderConfiguration
             .HasColumnName("notes")
             .HasColumnType("text");
 
+        b.Property(x => x.RecipientName)
+            .HasColumnName("recipient_name")
+            .HasMaxLength(100);
+
+        b.Property(x => x.RecipientPhone)
+            .HasColumnName("recipient_phone")
+            .HasMaxLength(20);
+
         b.HasOne<AppUser>()
             .WithMany()
             .HasForeignKey(x => x.CustomerId)

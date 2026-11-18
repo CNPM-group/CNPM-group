@@ -12,3 +12,12 @@ Truy vấn đơn hàng, kiện hàng và lịch sử trạng thái.
 | `UpdateAsync(order, history?)` | Lưu thay đổi của đơn (và kiện nếu service đã sửa trong cùng request), thêm dòng lịch sử nếu có. |
 
 `status` truyền vào đã được `OrderService` kiểm tra và chuẩn hóa (`"pending"` → `"Pending"`), repository không kiểm tra lại.
+
+## Thêm ở v0.11
+
+| Hàm | Làm gì |
+|---|---|
+| `PageAsync(..., search, ...)` | `search` khác rỗng → `UPPER(tracking_code) LIKE '%SEARCH%'`. Danh sách trả thêm người nhận |
+| `StatsByCustomerAsync()` | Một truy vấn `GROUP BY customer_id`: tổng đơn, hoàn tất, đang xử lý (chưa Completed / Cancelled / Rejected), ngày đặt gần nhất. Dùng cho màn Khách hàng |
+| `CountIncomingAsync(stationId, exceptOrderId)` | Đếm đơn `Scheduled`, `InTransit`, `ArrivedAtStation` có trạm nhận này, trừ chính đơn đang gán (giao lại đơn Failed không tự đếm mình) |
+

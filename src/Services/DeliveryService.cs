@@ -6,10 +6,14 @@ namespace SmartDrone.Services;
 public sealed class DeliveryService(
     IOrderRepository orders,
     IDroneRepository drones,
+    IStationRepository stations,
     IDeliveryRepository delivery,
     INotificationRepository notifications,
-    EtaService eta)
+    EtaService eta,
+    IOrderEvents events)
 {
+    public const int MinBatteryPct = 30;
+
     public async Task<DeliveryOrder> ScheduleAsync(Guid staffId, Guid orderId, Guid droneId, DateTime? scheduledAtUtc, CancellationToken ct = default)
     {
         var order = await GetOrderAsync(orderId, ct);
@@ -19,9 +23,22 @@ public sealed class DeliveryService(
         if (drone.Status != nameof(DroneStatus.Idle))
             throw new ConflictException($"Drone {drone.DroneCode} đang {drone.Status}, chỉ gán được drone Idle.");
 
+        // BR-12: pin tối thiểu để cất cánh.
+        if (drone.BatteryPct < MinBatteryPct)
+            throw new ValidationException($"Drone {drone.DroneCode} còn {drone.BatteryPct}% pin, cần tối thiểu {MinBatteryPct}% để bay.");
+
         var package = await orders.GetPackageAsync(order.PackageId, ct) ?? throw new NotFoundException("Không tìm thấy kiện hàng của đơn.");
         if (drone.MaxPayloadKg < package.WeightKg)
             throw new ValidationException($"Drone {drone.DroneCode} chở tối đa {drone.MaxPayloadKg} kg, kiện nặng {package.WeightKg} kg.");
+
+        // FR07: trạm nhận phải còn chỗ (đơn đang bay tới + kiện đang chờ khách < sức chứa) và không bảo trì.
+        var destination = await stations.GetByIdAsync(order.DestinationStationId, ct)
+            ?? throw new NotFoundException("Không tìm thấy trạm nhận.");
+        if (destination.Status == StationStatus.Maintenance)
+            throw new ConflictException($"{destination.Name} đang bảo trì, chưa nhận được drone.");
+        var load = await orders.CountIncomingAsync(destination.Id, order.Id, ct);
+        if (load >= destination.Capacity)
+            throw new ConflictException($"{destination.Name} đã đủ sức chứa ({load}/{destination.Capacity} đơn đang tới hoặc chờ khách nhận). Đợi khách nhận bớt rồi gán lại.");
 
         var now = DateTime.UtcNow;
         var departAt = scheduledAtUtc?.ToUniversalTime() ?? now;
@@ -29,6 +46,9 @@ public sealed class DeliveryService(
             throw new ValidationException("Giờ bay phải ở hiện tại hoặc tương lai.");
 
         var estimate = await eta.EstimateAsync(order.OriginStationId, order.DestinationStationId, package.WeightKg, ct);
+        // BR-12: tầm bay phải đủ quãng đường giữa 2 trạm.
+        if ((double)drone.MaxRangeKm < estimate.DistanceKm)
+            throw new ValidationException($"Drone {drone.DroneCode} bay tối đa {drone.MaxRangeKm} km, tuyến này dài {estimate.DistanceKm:0.##} km.");
 
         delivery.AddFlight(new DroneFlight
         {
@@ -50,6 +70,7 @@ public sealed class DeliveryService(
         order.FailureReason = null;
 
         await orders.UpdateAsync(order, history, ct);
+        await events.StatusChangedAsync(order, ct);
         return order;
     }
 
@@ -76,6 +97,7 @@ public sealed class DeliveryService(
         Notify(order, "Đơn đang được giao", $"Đơn {order.TrackingCode} đã cất cánh, dự kiến tới trạm lúc {order.EtaUtc:HH:mm dd/MM} UTC.", now);
 
         await orders.UpdateAsync(order, history, ct);
+        await events.StatusChangedAsync(order, ct);
         return order;
     }
 
@@ -114,6 +136,7 @@ public sealed class DeliveryService(
         Notify(order, "Hàng đã tới trạm", $"Đơn {order.TrackingCode} đã tới trạm. Mã nhận hàng: {otp} (hết hạn sau 24 giờ). Đọc mã này cho nhân viên trạm.", now);
 
         await orders.UpdateAsync(order, history, ct);
+        await events.StatusChangedAsync(order, ct);
         return order;
     }
 
@@ -146,6 +169,7 @@ public sealed class DeliveryService(
         Notify(order, "Giao hàng thành công", $"Đơn {order.TrackingCode} đã giao xong. Cảm ơn bạn!", now);
 
         await orders.UpdateAsync(order, history, ct);
+        await events.StatusChangedAsync(order, ct);
         return order;
     }
 
@@ -175,6 +199,26 @@ public sealed class DeliveryService(
         Notify(order, "Giao hàng thất bại", $"Đơn {order.TrackingCode} giao không thành công: {reason.Trim()}. Điều phối viên sẽ liên hệ giao lại hoặc hoàn trả.", now);
 
         await orders.UpdateAsync(order, history, ct);
+        await events.StatusChangedAsync(order, ct);
+        return order;
+    }
+
+    public async Task<DeliveryOrder> ReturnAsync(Guid staffId, Guid orderId, string reason, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(reason))
+            throw new ValidationException("Phải nhập lý do hủy đơn.");
+
+        var order = await GetOrderAsync(orderId, ct);
+        if (order.Status != nameof(OrderStatus.Failed))
+            throw new ConflictException("Chỉ hủy và hoàn trả được đơn đang ở trạng thái Failed.");
+        OrderStateMachine.EnsureTransition(order.Status, OrderStatus.Cancelled);
+
+        var now = DateTime.UtcNow;
+        var history = Move(order, OrderStatus.Cancelled, staffId, $"Hủy và hoàn trả: {reason.Trim()}", now);
+        Notify(order, "Đơn đã hủy", $"Đơn {order.TrackingCode} đã được hủy sau khi giao thất bại: {reason.Trim()}. Hàng được hoàn lại trạm gửi.", now);
+
+        await orders.UpdateAsync(order, history, ct);
+        await events.StatusChangedAsync(order, ct);
         return order;
     }
 

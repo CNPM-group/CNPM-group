@@ -7,6 +7,8 @@ public sealed record OrderSummary(
     string OriginStationName,
     string DestinationStationName,
     DateTime? EtaUtc,
-    DateTime CreatedAtUtc);
+    DateTime CreatedAtUtc,
+    string? RecipientName = null,
+    string? RecipientPhone = null);
 
 public sealed record PagedResult<T>(IReadOnlyList<T> Items, int Page, int PageSize, int TotalItems);

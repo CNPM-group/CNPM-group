@@ -21,7 +21,7 @@ public static class Roles
     public const string OperationsStaff = "Dispatcher,StationOperator,Manager,Admin";
 
     public static readonly string[] All = { Customer, Dispatcher, StationOperator, Manager, Admin };
-    public static readonly string[] Staff = { Dispatcher, Manager, Admin };
+    public static readonly string[] Staff = { Dispatcher, StationOperator, Manager, Admin };
 }
 
 public enum OrderStatus

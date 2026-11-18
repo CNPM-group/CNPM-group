@@ -20,11 +20,24 @@ public class AuthController(AuthService auth) : ControllerBase
     public async Task<ActionResult<AuthResponse>> Login(LoginRequest request) =>
         Ok(AuthResponse.From(await auth.LoginAsync(request.Email, request.Password)));
 
+    // v0.11: đọc từ CSDL (có số điện thoại, tên mới nhất) thay vì đọc lại claim trong token.
     [HttpGet("me")]
     [Authorize]
-    public ActionResult<MeResponse> Me() => Ok(new MeResponse(
-        User.FindFirst("sub")?.Value,
-        User.FindFirst("email")?.Value,
-        User.FindFirst("name")?.Value,
-        User.FindAll("role").Select(c => c.Value).ToList()));
+    public async Task<ActionResult<ProfileResponse>> Me() =>
+        Ok(ProfileResponse.From(await auth.GetProfileAsync(User.UserId())));
+
+    // FR01: tự sửa họ tên, số điện thoại. Token cũ vẫn mang tên cũ tới khi đăng nhập lại.
+    [HttpPut("me")]
+    [Authorize]
+    public async Task<ActionResult<ProfileResponse>> UpdateMe(ProfileRequest request) =>
+        Ok(ProfileResponse.From(await auth.UpdateProfileAsync(User.UserId(), request.FullName, request.Phone)));
+
+    // UC-03 (v0.11): đổi mật khẩu.
+    [HttpPost("me/password")]
+    [Authorize]
+    public async Task<IActionResult> ChangePassword(ChangePasswordRequest request)
+    {
+        await auth.ChangePasswordAsync(User.UserId(), request.CurrentPassword, request.NewPassword);
+        return NoContent();
+    }
 }
