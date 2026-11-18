@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using SmartDrone.Domain;
 using SmartDrone.Domain.Models;
 using SmartDrone.Infrastructure.Databases;
 
@@ -35,6 +36,15 @@ public sealed class DroneRepository(AppDbContext db) : IDroneRepository
     public async Task DeleteAsync(Drone drone, CancellationToken ct = default)
     {
         db.Drones.Remove(drone);
-        await db.SaveChangesAsync(ct);
+        try
+        {
+            await db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException)
+        {
+            // Khóa ngoại chặn xóa (còn đơn / chuyến bay trỏ tới) → báo 409 thay vì lỗi 500.
+            db.Entry(drone).State = EntityState.Unchanged;
+            throw new ConflictException("Drone đã có lịch sử chuyến bay, không xóa được. Chuyển drone sang Bảo trì thay vì xóa.");
+        }
     }
 }

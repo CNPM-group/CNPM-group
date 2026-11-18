@@ -496,6 +496,16 @@ namespace SmartDrone.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("package_id");
 
+                    b.Property<string>("RecipientName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("recipient_name");
+
+                    b.Property<string>("RecipientPhone")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("recipient_phone");
+
                     b.Property<DateTime?>("ScheduledAtUtc")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("scheduled_at");

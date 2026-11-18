@@ -7,11 +7,15 @@ public sealed class OrderService(
     IOrderRepository orders,
     IStationRepository stations,
     ICustomerAddressRepository addresses,
-    IDroneRepository drones)
+    IDroneRepository drones,
+    IUserRepository users,
+    IOrderEvents events)
 {
+
     public async Task<DeliveryOrder> CreateAsync(Guid customerId, DeliveryOrder input, Package package, CancellationToken ct = default)
     {
         await ValidateAsync(customerId, input, package, ct);
+        var (recipientName, recipientPhone) = await RecipientAsync(customerId, input, ct);
 
         var now = DateTime.UtcNow;
         package.CreatedAtUtc = now;
@@ -26,6 +30,8 @@ public sealed class OrderService(
             DeliveryAddressId = input.DeliveryAddressId,
             Status = nameof(OrderStatus.Pending),
             Notes = input.Notes,
+            RecipientName = recipientName,
+            RecipientPhone = recipientPhone,
             CreatedAtUtc = now,
             UpdatedAtUtc = now
         };
@@ -33,6 +39,7 @@ public sealed class OrderService(
         var history = NewHistory(order.Id, null, OrderStatus.Pending, customerId, "Khách hàng tạo đơn hàng.", now);
 
         await orders.AddAsync(order, package, history, ct);
+        await events.StatusChangedAsync(order, ct);
         return order;
     }
 
@@ -41,6 +48,7 @@ public sealed class OrderService(
         var order = await GetOwnedPendingAsync(customerId, orderId, "Chỉ được sửa đơn hàng đang ở trạng thái Pending.", ct);
 
         await ValidateAsync(customerId, input, package, ct);
+        var (recipientName, recipientPhone) = await RecipientAsync(customerId, input, ct);
 
         var current = await orders.GetPackageAsync(order.PackageId, ct)
             ?? throw new NotFoundException("Không tìm thấy kiện hàng của đơn.");
@@ -56,6 +64,8 @@ public sealed class OrderService(
         order.DestinationStationId = input.DestinationStationId;
         order.DeliveryAddressId = input.DeliveryAddressId;
         order.Notes = input.Notes;
+        order.RecipientName = recipientName;
+        order.RecipientPhone = recipientPhone;
         order.UpdatedAtUtc = DateTime.UtcNow;
 
         await orders.UpdateAsync(order, null, ct);
@@ -74,6 +84,7 @@ public sealed class OrderService(
         order.UpdatedAtUtc = now;
 
         await orders.UpdateAsync(order, history, ct);
+        await events.StatusChangedAsync(order, ct);
         return order;
     }
 
@@ -92,6 +103,7 @@ public sealed class OrderService(
         order.UpdatedAtUtc = now;
 
         await orders.UpdateAsync(order, history, ct);
+        await events.StatusChangedAsync(order, ct);
         return order;
     }
 
@@ -110,10 +122,11 @@ public sealed class OrderService(
         order.UpdatedAtUtc = now;
 
         await orders.UpdateAsync(order, history, ct);
+        await events.StatusChangedAsync(order, ct);
         return order;
     }
 
-    public Task<PagedResult<OrderSummary>> PageAsync(Guid? customerScope, string? status, int page, int pageSize, CancellationToken ct = default)
+    public Task<PagedResult<OrderSummary>> PageAsync(Guid? customerScope, string? status, string? search, int page, int pageSize, CancellationToken ct = default)
     {
         string? statusValue = null;
         if (!string.IsNullOrWhiteSpace(status))
@@ -126,11 +139,26 @@ public sealed class OrderService(
         page = Math.Max(page, 1);
         pageSize = Math.Clamp(pageSize, 1, ApiConstants.MaxPageSize);
 
-        return orders.PageAsync(customerScope, statusValue, page, pageSize, ct);
+        if (search is { Length: > 50 })
+            throw new ValidationException("Từ khóa tìm kiếm tối đa 50 ký tự.");
+
+        return orders.PageAsync(customerScope, statusValue, search, page, pageSize, ct);
     }
 
     public async Task<DeliveryOrder> GetAsync(Guid? customerScope, Guid orderId, CancellationToken ct = default) =>
         await orders.GetAsync(orderId, customerScope, ct) ?? throw new NotFoundException("Không tìm thấy đơn hàng.");
+
+    public async Task<OrderDetail> GetDetailAsync(Guid? customerScope, Guid orderId, CancellationToken ct = default)
+    {
+        var order = await GetAsync(customerScope, orderId, ct);
+        var package = await orders.GetPackageAsync(order.PackageId, ct)
+            ?? throw new NotFoundException("Không tìm thấy kiện hàng của đơn.");
+        var origin = await stations.GetByIdAsync(order.OriginStationId, ct)
+            ?? throw new NotFoundException("Không tìm thấy trạm gửi.");
+        var destination = await stations.GetByIdAsync(order.DestinationStationId, ct)
+            ?? throw new NotFoundException("Không tìm thấy trạm nhận.");
+        return new OrderDetail(order, package, origin, destination);
+    }
 
     public async Task<IReadOnlyList<OrderStatusHistory>> GetHistoryAsync(Guid? customerScope, Guid orderId, CancellationToken ct = default)
     {
@@ -151,14 +179,38 @@ public sealed class OrderService(
         if (input.OriginStationId == input.DestinationStationId)
             throw new ValidationException("Trạm gửi và trạm nhận phải khác nhau.");
 
-        if (!await stations.ExistsAsync(input.OriginStationId, ct) || !await stations.ExistsAsync(input.DestinationStationId, ct))
+        var origin = await stations.GetByIdAsync(input.OriginStationId, ct);
+        var destination = await stations.GetByIdAsync(input.DestinationStationId, ct);
+        if (origin is null || destination is null)
             throw new ValidationException("Trạm gửi hoặc trạm nhận không tồn tại.");
+
+        foreach (var s in new[] { origin, destination })
+            if (s.Status == StationStatus.Maintenance)
+                throw new ValidationException($"{s.Name} đang bảo trì, chọn trạm khác.");
 
         if (input.DeliveryAddressId is { } addressId && !await addresses.BelongsToAsync(addressId, customerId, ct))
             throw new ValidationException("Địa chỉ giao hàng không tồn tại hoặc không thuộc về bạn.");
 
         if (!await drones.AnyCanCarryAsync(package.WeightKg, ct))
             throw new ValidationException("Kiện hàng vượt quá tải trọng tối đa của đội drone.");
+    }
+
+    // Quy tắc nghiệp vụ số 2: đơn phải có người nhận. Khách bỏ trống thì người nhận là chính khách.
+    private async Task<(string Name, string? Phone)> RecipientAsync(Guid customerId, DeliveryOrder input, CancellationToken ct)
+    {
+        var name = input.RecipientName?.Trim();
+        var phone = ProfileRules.Phone(input.RecipientPhone);
+        if (name is { Length: > 100 })
+            throw new ValidationException("Tên người nhận tối đa 100 ký tự.");
+
+        if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(phone))
+        {
+            var customer = await users.GetByIdAsync(customerId);
+            if (string.IsNullOrEmpty(name)) name = customer?.FullName;
+            if (string.IsNullOrEmpty(phone)) phone = customer?.Phone;
+        }
+
+        return (string.IsNullOrWhiteSpace(name) ? "Khách hàng" : name, string.IsNullOrWhiteSpace(phone) ? null : phone);
     }
 
     private static OrderStatusHistory NewHistory(Guid orderId, string? from, OrderStatus to, Guid by, string note, DateTime at) => new()

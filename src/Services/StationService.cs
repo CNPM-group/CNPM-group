@@ -11,27 +11,29 @@ public sealed class StationService(IStationRepository stations)
     public async Task<LandingStation> GetAsync(Guid id, CancellationToken ct = default) =>
         await stations.GetByIdAsync(id, ct) ?? throw new NotFoundException("Không tìm thấy trạm.");
 
-    public async Task<LandingStation> CreateAsync(string name, decimal latitude, decimal longitude, StationStatus status, CancellationToken ct = default)
+    public async Task<LandingStation> CreateAsync(string name, decimal latitude, decimal longitude, StationStatus status, short capacity, CancellationToken ct = default)
     {
         var station = new LandingStation
         {
             Name = name.Trim(),
             Latitude = latitude,
             Longitude = longitude,
-            Status = status
+            Status = status,
+            Capacity = capacity
         };
 
         await stations.AddAsync(station, ct);
         return station;
     }
 
-    public async Task<LandingStation> UpdateAsync(Guid id, string name, decimal latitude, decimal longitude, StationStatus status, CancellationToken ct = default)
+    public async Task<LandingStation> UpdateAsync(Guid id, string name, decimal latitude, decimal longitude, StationStatus status, short capacity, CancellationToken ct = default)
     {
         var station = await GetAsync(id, ct);
         station.Name = name.Trim();
         station.Latitude = latitude;
         station.Longitude = longitude;
         station.Status = status;
+        station.Capacity = capacity;
 
         await stations.UpdateAsync(station, ct);
         return station;
@@ -42,4 +44,8 @@ public sealed class StationService(IStationRepository stations)
         var station = await GetAsync(id, ct);
         await stations.DeleteAsync(station, ct);
     }
+
+    // FR07: số đơn đang tới / đang chờ khách / sắp đi của từng trạm.
+    public Task<IReadOnlyList<StationLoad>> LoadAsync(CancellationToken ct = default) =>
+        stations.LoadAsync(ct);
 }

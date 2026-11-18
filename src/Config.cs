@@ -22,6 +22,22 @@ public sealed class EtaOptions
     public double WeightMinutesPerKg { get; set; } = 0.5;
 }
 
+public sealed class SimulatorOptions
+{
+    public bool Enabled { get; set; } = true;
+    public int IntervalSeconds { get; set; } = 3;
+    public double TimeScale { get; set; } = 1;
+}
+
+public sealed class MinioStorageOptions
+{
+    public string Endpoint { get; set; } = string.Empty;
+    public string AccessKey { get; set; } = string.Empty;
+    public string SecretKey { get; set; } = string.Empty;
+    public string Bucket { get; set; } = "smartdrone";
+    public bool UseSsl { get; set; }
+}
+
 public static class Config
 {
     public const string AuthCookie = "smartdrone_auth";
@@ -33,6 +49,8 @@ public static class Config
         builder.Services.Configure<JwtOptions>(config.GetSection("Jwt"));
         builder.Services.Configure<LlmOptions>(config.GetSection("Llm"));
         builder.Services.Configure<EtaOptions>(config.GetSection("Eta"));
+        builder.Services.Configure<MinioStorageOptions>(config.GetSection("Minio"));
+        builder.Services.Configure<SimulatorOptions>(config.GetSection("Simulator"));
 
         var jwt = config.GetSection("Jwt").Get<JwtOptions>() ?? new JwtOptions();
         if (string.IsNullOrWhiteSpace(jwt.Key) || jwt.Key.Length < 32)

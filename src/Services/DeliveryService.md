@@ -4,7 +4,7 @@ Luồng giao hàng sau khi đơn được duyệt. Mọi bước đổi trạng 
 
 | Hàm | Trạng thái | Việc làm |
 |---|---|---|
-| `ScheduleAsync(staff, order, droneId, giờ bay?)` | `Approved`/`Failed` → `Scheduled` | Drone phải `Idle` và chở nổi kiện. Tạo `DroneFlight` (chặng = số chặng cũ + 1), drone → `Assigned`, tính `EtaUtc` = giờ bay + phút ETA của `EtaService` |
+| `ScheduleAsync(staff, order, droneId, giờ bay?)` | `Approved`/`Failed` → `Scheduled` | Drone phải `Idle`, chở nổi kiện, **pin ≥ 30 %** (`MinBatteryPct`) và **tầm bay ≥ khoảng cách 2 trạm** (BR-12, v0.11; sai → 400). **Trạm nhận phải còn chỗ và không bảo trì (v0.11)**: số đơn đang tới (`Scheduled`, `InTransit`) + kiện chờ khách (`ArrivedAtStation`) phải nhỏ hơn `Capacity` của trạm, đầy → 409 "... đã đủ sức chứa (n/n ...)". Tạo `DroneFlight` (chặng = số chặng cũ + 1), drone → `Assigned`, tính `EtaUtc` = giờ bay + phút ETA của `EtaService` |
 | `StartAsync(staff, order)` | `Scheduled` → `InTransit` | Chuyến bay → `Flying`, ghi giờ cất cánh thật; drone → `InFlight`; dời ETA theo giờ cất cánh thật; báo khách |
 | `ArriveAsync(staff, order)` | `InTransit` → `ArrivedAtStation` | Chuyến bay → `Landed`; drone → `Idle`, đậu ở trạm nhận; sinh OTP 6 số, lưu **hash** vào `delivery_confirmations` (hạn 24 giờ); gửi OTP vào thông báo của khách |
 | `ConfirmAsync(staff, order, otp)` | `ArrivedAtStation` → `Completed` | So hash OTP. Sai → +1 lần sai, báo còn mấy lần (tối đa 5). Quá 5 lần hoặc hết hạn → 409. Đúng → ghi người xác nhận, `CompletedAtUtc`, báo khách |

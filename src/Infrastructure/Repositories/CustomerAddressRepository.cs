@@ -21,6 +21,11 @@ public sealed class CustomerAddressRepository(AppDbContext db) : ICustomerAddres
     public Task<bool> HasOtherDefaultAsync(Guid customerId, Guid? exceptId, CancellationToken ct = default) =>
         db.CustomerAddresses.AnyAsync(a => a.CustomerId == customerId && a.IsDefault && a.Id != exceptId, ct);
 
+    public Task ClearDefaultAsync(Guid customerId, Guid? exceptId, CancellationToken ct = default) =>
+        db.CustomerAddresses
+            .Where(a => a.CustomerId == customerId && a.IsDefault && a.Id != exceptId)
+            .ExecuteUpdateAsync(s => s.SetProperty(a => a.IsDefault, false), ct);
+
     public async Task AddAsync(CustomerAddress address, CancellationToken ct = default)
     {
         db.CustomerAddresses.Add(address);

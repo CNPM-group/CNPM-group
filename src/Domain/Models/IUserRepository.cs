@@ -10,4 +10,7 @@ public interface IUserRepository
     Task<IReadOnlyList<string>> GetRolesAsync(Guid userId);
     Task SetRolesAsync(Guid userId, IReadOnlyCollection<string> roles);
     Task SetActiveAsync(Guid userId, bool isActive);
+    Task<IReadOnlyList<User>> ListInRoleAsync(string role);
+    Task<User> UpdateProfileAsync(Guid userId, string fullName, string? phone);
+    Task ChangePasswordAsync(Guid userId, string currentPassword, string newPassword);
 }

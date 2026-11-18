@@ -6,6 +6,7 @@ Lịch sử thay đổi cấu trúc CSDL do EF Core sinh ra (tương đương th
 |---|---|
 | `20261022053444_InitialCreate.cs` | Tạo toàn bộ bảng: 15 bảng nghiệp vụ + bảng Identity (users, roles...), khóa ngoại, index, check constraint |
 | `20261022054939_UpdateUserConstraints.cs` | Chỉnh bảng `users`: email ≤ 255 + unique `ux_users_email`, thêm `is_active` |
+| `20261116060000_AddOrderRecipient.cs` | (v0.11) Thêm `recipient_name` varchar(100), `recipient_phone` varchar(20) vào `delivery_orders`, cho phép trống (đơn cũ không có) |
 | `*.Designer.cs` | Ảnh chụp model tại thời điểm tạo migration đó (EF dùng nội bộ) |
 | `AppDbContextModelSnapshot.cs` | Ảnh chụp model hiện tại; EF so với model mới để biết lần sau cần sinh migration gì |
 
@@ -19,3 +20,17 @@ dotnet ef migrations script --project src -o docs/migration.sql      # xuất SQ
 ```
 
 Quy tắc: mỗi PR đổi bảng phải kèm migration; hai người cùng tạo migration song song thì người merge sau xóa migration của mình, pull về rồi tạo lại.
+
+## Lưu ý về migration v0.11
+
+`20261116060000_AddOrderRecipient.cs` được **viết tay** vì máy làm bản v0.11 không có .NET SDK, nên không có file `.Designer.cs` đi kèm (EF vẫn chạy được, vì `[DbContext]` và `[Migration]` đã đặt ngay trên class). `AppDbContextModelSnapshot.cs` cũng đã thêm 2 cột này bằng tay.
+
+Máy nào có .NET thì nên làm lại cho chuẩn, **trước khi** áp vào CSDL thật:
+
+```bash
+# xóa file migration viết tay + bỏ 2 cột Recipient* vừa thêm trong AppDbContextModelSnapshot.cs, rồi:
+dotnet ef migrations add AddOrderRecipient --project src -o Migrations
+```
+
+Kiểm nhanh: `dotnet ef migrations has-pending-model-changes --project src` (EF 8) phải báo không còn thay đổi.
+

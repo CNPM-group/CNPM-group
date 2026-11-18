@@ -32,6 +32,11 @@ public class DeliveryOrder
 
     public string? Notes { get; set; }
 
+    // Người nhận (v0.11). Khách không nhập thì lấy tên + số điện thoại của chính khách.
+    public string? RecipientName { get; set; }
+
+    public string? RecipientPhone { get; set; }
+
     public DateTime CreatedAtUtc { get; set; } =
         DateTime.UtcNow;
 

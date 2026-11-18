@@ -15,6 +15,7 @@ public sealed class AiService(ILlmClient llm, OrderService orders, StationServic
 
     private const string ChatbotPrompt =
         "Bạn là chatbot hỗ trợ khách hàng của SmartDroneDelivery. Trả lời bằng tiếng Việt, ngắn gọn và dễ hiểu. " +
+        "Khi người dùng hỏi về đơn của họ mà không đưa ID, hãy dùng list_my_orders để lấy các đơn gần nhất. " +
         "Khi cần tra đơn hàng, hãy dùng get_order_status. Khi cần tra trạm theo ID, hãy dùng get_station_status. " +
         "Khi cần ETA, hãy dùng get_delivery_eta. Chỉ sử dụng dữ liệu trả về từ công cụ. " +
         "Không tự bịa trạng thái, thông tin trạm hoặc ETA. Nếu thiếu ID cần thiết, hãy hỏi lại người dùng. " +
@@ -24,7 +25,17 @@ public sealed class AiService(ILlmClient llm, OrderService orders, StationServic
     {
         Tool("get_order_status", "Tra cứu thông tin và trạng thái đơn hàng theo ID.", "orderId", "ID đơn hàng dạng UUID."),
         Tool("get_station_status", "Tra cứu thông tin trạm theo ID.", "stationId", "ID trạm dạng UUID."),
-        Tool("get_delivery_eta", "Tra cứu thời gian giao hàng dự kiến ETA của đơn hàng.", "orderId", "ID đơn hàng dạng UUID.")
+        Tool("get_delivery_eta", "Tra cứu thời gian giao hàng dự kiến ETA của đơn hàng.", "orderId", "ID đơn hàng dạng UUID."),
+        new
+        {
+            type = "function",
+            function = new
+            {
+                name = "list_my_orders",
+                description = "Liệt kê 5 đơn hàng gần nhất của người dùng (mới nhất trước): ID, mã đơn, trạng thái, trạm đi, trạm đến, ETA.",
+                parameters = new { type = "object", properties = new Dictionary<string, object>(), additionalProperties = false }
+            }
+        }
     };
 
     public async Task<AiAnswer> AskAsync(string? prompt, CancellationToken ct = default)
@@ -105,6 +116,21 @@ public sealed class AiService(ILlmClient llm, OrderService orders, StationServic
 
     private async Task<object> RunToolAsync(string name, string? argumentsJson, Guid? customerScope, CancellationToken ct)
     {
+        if (name == "list_my_orders")
+        {
+            var page = await orders.PageAsync(customerScope, null, null, 1, 5, ct);
+            return page.Items.Select(o => new
+            {
+                o.Id,
+                o.TrackingCode,
+                o.Status,
+                origin = o.OriginStationName,
+                destination = o.DestinationStationName,
+                eta = o.EtaUtc,
+                o.CreatedAtUtc
+            }).ToList();
+        }
+
         var idKey = name switch
         {
             "get_order_status" or "get_delivery_eta" => "orderId",

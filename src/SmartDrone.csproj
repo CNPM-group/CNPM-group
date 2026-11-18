@@ -8,6 +8,10 @@
     <DefaultItemExcludes>$(DefaultItemExcludes);**/bin/**;**/obj/**</DefaultItemExcludes>
   </PropertyGroup>
   <ItemGroup>
+    <!-- v0.11: cho project test đọc được các hàm internal (luật tự ghép của AI, luật hồ sơ). -->
+    <InternalsVisibleTo Include="SmartDrone.Tests" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="EFCore.NamingConventions" Version="8.0.3" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.*" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.*" />
@@ -16,6 +20,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="8.0.*" />
+    <PackageReference Include="Minio" Version="6.0.*" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.*" />
     <PackageReference Include="Serilog.AspNetCore" Version="8.*" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.9.0" />

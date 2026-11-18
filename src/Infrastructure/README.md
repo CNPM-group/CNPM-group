@@ -7,4 +7,5 @@ Phần nói chuyện với thế giới bên ngoài (tương đương `src/infra
 | `Databases/` | `infrastructure/databases` | `AppDbContext` (kết nối PostgreSQL), `DbSeeder` (migrate + dữ liệu mẫu) | [Databases/README.md](Databases/README.md) |
 | `Models/` | `infrastructure/models` (SQLAlchemy) | Ánh xạ model Domain ↔ bảng (Fluent API), `AppUser`/`AppRole` của Identity | [Models/README.md](Models/README.md) |
 | `Repositories/` | `infrastructure/repositories` | Cài đặt `I*Repository` bằng EF Core | [Repositories/README.md](Repositories/README.md) |
-| `Services/` | `infrastructure/services` | Dịch vụ dùng thư viện/bên thứ ba: tạo JWT, gọi LLM | [Services/README.md](Services/README.md) |
+| `Services/` | `infrastructure/services` | Dịch vụ dùng thư viện/bên thứ ba: tạo JWT, gọi LLM, lưu ảnh MinIO | [Services/README.md](Services/README.md) |
+| `Realtime/` | – | SignalR hub `/hubs/delivery`, gửi event đổi trạng thái đơn | [Realtime/README.md](Realtime/README.md) |

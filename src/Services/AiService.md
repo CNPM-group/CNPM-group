@@ -12,6 +12,7 @@ Chatbot hỗ trợ khách dùng **function calling**. LLM không tự biết d�
 
 | Tool | Tham số | Service gọi | Trả về |
 |---|---|---|---|
+| `list_my_orders` | (không có) | `OrderService.PageAsync(customerScope, null, 1, 5)` | 5 đơn gần nhất: id, mã đơn, trạng thái, tên trạm đi/đến, ETA, ngày tạo. Thêm ở v0.8 để khách hỏi "đơn của tôi tới đâu rồi" mà không cần nhớ ID |
 | `get_order_status` | `orderId` | `OrderService.GetAsync(customerScope, id)` | mã đơn, trạng thái, trạm, ETA, ngày tạo |
 | `get_delivery_eta` | `orderId` | `OrderService.GetAsync(customerScope, id)` | ETA + trạng thái |
 | `get_station_status` | `stationId` | `StationService.GetAsync(id)` | tên, tọa độ, trạng thái trạm |

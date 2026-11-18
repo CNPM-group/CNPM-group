@@ -14,6 +14,7 @@ Phần 1 – đăng ký (trước `builder.Build()`):
 | `AddJwtAuthentication(jwt)` | Xác thực JWT (hàm private ngay trong file này) | `CreateApp.cs` |
 | `AddAppCors(...)` | Policy CORS `web` | `Cors.cs` |
 | `AddControllers().AddApiResponses()` | Bật controller, enum trả dạng chuỗi, format lỗi validate | `Api/Responses.cs` |
+| `AddSignalR()` | Bật SignalR cho cập nhật realtime | `Infrastructure/Realtime/` |
 | `AddProblemDetails()` + `AddExceptionHandler<ErrorHandler>()` | Lỗi trả theo chuẩn ProblemDetails | `ErrorHandler.cs` |
 | `AddHealthChecks().AddDbContextCheck<AppDbContext>()` | `/health` trả 200 khi kết nối được PostgreSQL | |
 | `AddAppSwagger()` | Swagger + nút Authorize | `Api/Swagger.cs` |
@@ -24,6 +25,7 @@ Phần 2 – pipeline (sau `builder.Build()`), **thứ tự quan trọng**:
 2. Chỉ ở Development: Swagger UI và `DbSeeder.SeedAsync` (migrate + dữ liệu mẫu). Bỏ qua seed khi chạy bằng công cụ `dotnet ef`.
 3. `UseCors` → `UseAuthentication` → `UseAuthorization` – CORS phải trước auth, auth phải trước authorization.
 4. `MapControllers()` – thay cho `routes.py`: ASP.NET tự tìm mọi controller có `[Route]`.
+   `MapHub<DeliveryHub>("/hubs/delivery")` – mở hub SignalR.
 5. `MapHealthChecks("/health")`.
 
 ## JWT
@@ -31,3 +33,4 @@ Phần 2 – pipeline (sau `builder.Build()`), **thứ tự quan trọng**:
 - Token ký HMAC-SHA256 bằng `Jwt:Key`; kiểm tra issuer, audience, hạn dùng (lệch giờ cho phép 30 giây).
 - `MapInboundClaims = false` để giữ nguyên tên claim ngắn `sub`, `email`, `name`, `role` (khớp `JwtTokenService`).
 - Token lấy từ header `Authorization: Bearer ...`; nếu có cookie `smartdrone_auth` (hằng `Config.AuthCookie`) thì lấy từ cookie.
+- Riêng đường dẫn `/hubs/...`: lấy token từ query `?access_token=` vì trình duyệt không gắn header được khi mở WebSocket.
